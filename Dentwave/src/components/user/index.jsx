@@ -1,1 +1,2 @@
-sdcfhj
+// sdcfhj
+import 'bootstrap/dist/css/bootstrap.min.css';
