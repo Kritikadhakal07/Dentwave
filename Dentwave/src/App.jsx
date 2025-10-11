@@ -1,14 +1,24 @@
-import React from 'react'
-import { Button } from 'react-bootstrap';
-import Footer from './components/Footer/Footer';
+import Footer from "./components/Footer/Footer";
+import Header from "./components/user/components/Header";
+import { Routes, Route } from 'react-router-dom';
 
-const App = () => {
+function App() {
   return (
     <>
-     <div>hello dentwave</div>
-     <Footer/>
-     </>
-  )
+    <Routes>
+
+     <Route path = "/" element = {<Header/>} />
+      <Route path = "/footer" element = {<Footer/>} />
+
+
+    </Routes>
+
+    
+    
+    </>
+      
+  
+  );
 }
 
-export default App
+export default App;
