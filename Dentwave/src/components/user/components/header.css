@@ -74,6 +74,7 @@
   box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3);
   background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
 }
+
 /* Book Appointment Button - Special Styling */
 .btn-book {
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
@@ -124,8 +125,39 @@
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
-/* Responsive adjustments */
+/* Mobile Responsive Adjustments */
 @media (max-width: 991px) {
+  /* Logo stays on left */
+  .navbar-brand {
+    margin-right: auto !important;
+  }
+
+  /* Toggler on right */
+  .navbar-toggler {
+    margin-left: auto;
+  }
+
+  /* Collapsed menu styling */
+  .navbar-collapse {
+    margin-top: 1rem;
+  }
+
+  .navbar-nav {
+    margin-bottom: 1rem;
+    align-items: flex-start;
+  }
+
+  .nav-item {
+    text-align: left;
+    margin: 0.25rem 0;
+    width: 100%;
+  }
+
+  .nav-link {
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Button container on mobile */
   .d-flex.gap-2 {
     margin-top: 1rem;
     flex-direction: column;
@@ -135,4 +167,30 @@
   .d-flex.gap-2 .btn {
     width: 100%;
   }
+
+  /* Active state underline adjustment for mobile */
+  .nav-link::after {
+    left: 1rem;
+    transform: none;
+  }
+
+  .nav-link.active::after,
+  .nav-link:hover::after {
+    width: calc(100% - 2rem);
+  }
+}
+
+/* Smooth transition for collapse */
+.navbar-collapse {
+  transition: height 0.3s ease-in-out;
+}
+
+/* Ensure toggler is visible and positioned correctly */
+.navbar-toggler {
+  border: 1px solid rgba(0,0,0,.1);
+  padding: 0.5rem 0.75rem;
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
