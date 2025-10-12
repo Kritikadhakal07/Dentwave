@@ -5,7 +5,9 @@ import About from "./components/user/Pages/About/About";
 import Contact from "./components/user/Pages/Contact/Contact";
 import Login from "./components/user/Pages/Login/Login";
 import AdminDashboard from "./components/admin/pages/Adminboard";
-
+import UserManagement from "./components/admin/pages/UserManagement";
+import PatientManagement from "./components/admin/pages/PatientManagement";
+import ServiceManagement from "./components/admin/pages/ServiceManagement";
 import UserLayout from "./components/layouts/UserLayout"
 import AdminLayout from "./components/layouts/AdminLayout";
 
@@ -31,6 +33,9 @@ function App() {
       {userRole === "admin" && (
         <Route element={<AdminLayout />}>
           <Route path="/admindashboard" element={<AdminDashboard />} />
+          <Route path="/usermanagement" element={<UserManagement />} />
+          <Route path="/patientmanagement" element={<PatientManagement />} />
+          <Route path="/servicemanagement" element={<ServiceManagement />} />
           {/* Add more admin routes here */}
         </Route>
       )}

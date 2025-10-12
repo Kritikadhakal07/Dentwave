@@ -9,6 +9,7 @@ const AdminLayout = () => {
       <div style={{ flex: 1 }}>
         <AdminHeader />
         <Outlet />
+       
       </div>
     </div>
   );
