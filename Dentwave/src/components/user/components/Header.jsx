@@ -25,7 +25,7 @@ function Header() {
         <Link to="/" className="navbar-brand" onClick={closeMenu}>
           <img 
             className="logo" 
-            src="https://via.placeholder.com/150x50?text=Your+Logo" 
+            src="facilities1.jpg" 
             alt="Logo"
             style={{ height: '50px' }}
           />
