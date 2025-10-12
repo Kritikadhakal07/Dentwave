@@ -10,7 +10,6 @@ export default function Contact() {
 
   return (
     <>
-    <Header/>
     <section className="hero1 text-center py-5" style={{ backgroundColor: "#f8fbff" }}>
      
         <h1 className="fw-bold mb-3" style={{ color: "#4a90e2" }}>
@@ -78,7 +77,6 @@ export default function Contact() {
         </Row>
       </Container>
     
-    <Footer/>
     </>
   );
 }

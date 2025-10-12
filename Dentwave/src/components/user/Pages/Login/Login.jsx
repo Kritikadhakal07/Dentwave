@@ -22,7 +22,6 @@ const Login = () => {
 
   return (
     <>
-    <Header/>
     <div
       style={{
         background: "linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%)",
@@ -105,7 +104,6 @@ const Login = () => {
         </Card>
       </Container>
     </div>
-    <Footer/>
     </>
   );
 };

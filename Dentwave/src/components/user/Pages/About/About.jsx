@@ -25,7 +25,6 @@ const About = () => {
 
   return (
     <>
-    <Header/>
     <section className='py-5 bg-light text-dark'>
         <Container >
             {/* OUr mission and story */}
@@ -70,7 +69,6 @@ const About = () => {
     </section>
 
     <Ourteam/>
-    <Footer/>
  
     </>
   )
