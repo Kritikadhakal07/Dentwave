@@ -6,11 +6,16 @@ import { Routes, Route } from 'react-router-dom';
 import About from "./components/user/Pages/About/About";
 import Contact from "./components/user/Pages/Contact/Contact";
 import Login from "./components/user/Pages/Login/Login";
+import AdminHeader from "./components/admin/component/Header";
+import AdminSidebar from "./components/admin/component/Sidebar";
 
 function App() {
   return (
     <>
-    <Header />
+    {/* <Header /> */}
+    <AdminHeader />
+    
+
 
     <Routes>
 
@@ -19,6 +24,8 @@ function App() {
       <Route path = "/about" element = {<About/>} />
       <Route path = "/contact" element = {<Contact/>} />
       <Route path = "/login" element = {<Login/>} />
+      <Route path = "/admin" element = {<AdminHeader/>} />
+      <Route path= "/adminsidebar" element = {<AdminSidebar/>} />
 
 
 
