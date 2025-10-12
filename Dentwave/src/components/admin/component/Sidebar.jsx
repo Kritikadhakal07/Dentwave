@@ -1,15 +1,16 @@
-// Sidebar Component
+import React from 'react';
+import { Home, Users, UserCog, Calendar, Briefcase, Shield, Settings, AlertCircle, UserCheck, RefreshCw, User, Clock, Plus, UserPlus, Search, Bell } from 'lucide-react';
 function Sidebar() {
   const sidebarItems = [
-    // { icon: <Home size={18} />, label: 'Dashboard', active: true },
-    // { icon: <Users size={18} />, label: 'User Management' },
-    // { icon: <UserCog size={18} />, label: 'Doctor Management' },
-    // { icon: <User size={18} />, label: 'Patient Management' },
-    // { icon: <Calendar size={18} />, label: 'Appointment Management' },
-    // { icon: <Briefcase size={18} />, label: 'Service Management' },
-    // { icon: <Shield size={18} />, label: 'Credential Management' },
+    { icon: <Home size={18} />, label: 'Dashboard', active: true },
+    { icon: <Users size={18} />, label: 'User Management' },
+    { icon: <UserCog size={18} />, label: 'Doctor Management' },
+    { icon: <User size={18} />, label: 'Patient Management' },
+    { icon: <Calendar size={18} />, label: 'Appointment Management' },
+    { icon: <Briefcase size={18} />, label: 'Service Management' },
+    { icon: <Shield size={18} />, label: 'Credential Management' },
 
-    <p>hshbdc</p>
+    
   ];
 
   return (

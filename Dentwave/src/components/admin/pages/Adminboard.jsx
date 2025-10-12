@@ -1,3 +1,7 @@
+import React from 'react';
+import { Calendar, AlertCircle, UserCheck, RefreshCw, User, Clock, Plus, UserPlus, Search, Bell } from 'lucide-react';
+import Header from '../component/Header';
+import Sidebar from '../component/Sidebar';
 function MainContent() {
   const metrics = [
     { label: 'Total Appointments Today', value: '120', icon: <Calendar size={20} className="text-primary" /> },
@@ -42,7 +46,7 @@ function MainContent() {
           Add Doctor
         </button>
         <button className="btn btn-outline-secondary d-flex align-items-center">
-          <Users size={18} className="me-2" />
+          <User size={18} className="me-2" />
           Manage Users
         </button>
       </div>

@@ -10,7 +10,7 @@ import {
 // Header Component
 function Header() {
   return (
-    <nav className="navbar navbar-light bg-white border-bottom px-4" style={{ position: 'fixed', top: 0, right: 0, left: '240px', zIndex: 100 }}>
+    <nav className="navbar navbar-light bg-white border-bottom px-4 py-3" style={{ position: 'fixed', top: 0, right: 0, left: '240px', zIndex: 100 }}>
       <div className="container-fluid">
         <div className="d-flex align-items-center flex-grow-1">
           <div className="position-relative" style={{ maxWidth: '400px', width: '100%' }}>
