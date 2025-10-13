@@ -33,7 +33,7 @@ function Sidebar() {
         {sidebarItems.map((item, index) => (
           <a
             key={index}
-            href="#"
+            href="/"
             className={`d-flex align-items-center px-3 py-2 text-decoration-none ${
               item.active ? 'bg-light text-primary' : 'text-secondary'
             }`}

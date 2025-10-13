@@ -10,6 +10,7 @@ import PatientManagement from "./components/admin/pages/PatientManagement";
 import ServiceManagement from "./components/admin/pages/ServiceManagement";
 import UserLayout from "./components/layouts/UserLayout"
 import AdminLayout from "./components/layouts/AdminLayout";
+import AppointmentManagement from "./components/admin/pages/AppointmentManagement";
 
 function App() {
   // Manually set role for testing
@@ -19,7 +20,7 @@ function App() {
   return (
     <Routes>
       {/* User Routes */}
-      {userRole !== "admin" && (
+      {userRole !== "user" && (
         <Route element={<UserLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/service" element={<DentalServicesApp />} />
@@ -36,6 +37,8 @@ function App() {
           <Route path="/usermanagement" element={<UserManagement />} />
           <Route path="/patientmanagement" element={<PatientManagement />} />
           <Route path="/servicemanagement" element={<ServiceManagement />} />
+          <Route path="/appointmentmanagement" element={<AppointmentManagement/>} />
+
           {/* Add more admin routes here */}
         </Route>
       )}
