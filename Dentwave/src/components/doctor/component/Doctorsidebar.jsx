@@ -13,7 +13,7 @@ const Doctorsidebar = () => {
       {/* Header / Logo */}
       <div className="px-3 py-3 border-bottom">
          <div className="p-3 border-bottom">
-        <h4 className="text-primary m-0" style={{ fontFamily: 'cursive' }}>✱ logo</h4>
+        <h4 className="text-primary m-0" style={{ fontFamily: 'cursive' }}>✱ Dentwave</h4>
       </div>
       </div>
 
