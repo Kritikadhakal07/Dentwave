@@ -12,6 +12,7 @@ import UserLayout from "./components/layouts/UserLayout"
 import AdminLayout from "./components/layouts/AdminLayout";
 import AppointmentManagement from "./components/admin/pages/AppointmentManagement";
 import DoctorManagement from "./components/admin/pages/DoctorManagement/DoctorManagement";
+import TestApi from "./TestApi";
 
 function App() {
   // Manually set role for testing
@@ -19,6 +20,10 @@ function App() {
   const userRole = "admin"; // or "admin"
 
   return (
+    <>
+    <TestApi />
+    
+    
     <Routes>
       {/* User Routes */}
       {userRole !== "user" && (
@@ -46,6 +51,7 @@ function App() {
         </Route>
       )}
     </Routes>
+    </>
   );
 }
 
