@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Bell, User, Plus, Edit, Trash2, Calendar, Settings } from 'lucide-react';
 import AddTimeSlotModal from './AddTimeSlotModal';
+import AddDoctorModal from './AddDoctorModal';
 
 const DoctorManagement = () => {
   const [doctors, setDoctors] = useState([
@@ -10,6 +11,9 @@ const DoctorManagement = () => {
     { id: 4, name: 'Dr. Benjamin Hayes', specialization: 'Orthopedics', experience: '10 years', contact: '555-222-3333', status: 'Active' },
     { id: 5, name: 'Dr. Olivia Chen', specialization: 'Neurology', experience: '15 years', contact: '555-444-5555', status: 'Vacation' }
   ]);
+  const [showAddDoctor, setShowAddDoctor] = useState(false);
+const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
+
 
   const [selectedDoctor, setSelectedDoctor] = useState('Dr. Evelyn Reed');
   
@@ -50,10 +54,11 @@ const DoctorManagement = () => {
           <div className="bg-white rounded shadow-sm p-4 mb-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="mb-0">Doctor Roster</h5>
-              <button className="btn btn-outline-primary btn-sm">
-                <Plus size={16} className="me-1" />
-                Add Doctor
-              </button>
+             <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddDoctor(true)}>
+  <Plus size={16} className="me-1" />
+  Add Doctor
+</button>
+
             </div>
 
             <div className="table-responsive">
@@ -110,13 +115,26 @@ const DoctorManagement = () => {
                     <option key={d.id} value={d.name}>{d.name}</option>
                   ))}
                 </select>
-                <button className="btn btn-outline-primary btn-sm">
-                  <Calendar size={16} className="me-1" />
-                  Add Time Slot
-                </button>
+               <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddTimeSlot(true)}>
+  <Calendar size={16} className="me-1" />
+  Add Time Slot
+</button>
+
               </div>
             </div>
-  
+  <AddDoctorModal
+  show={showAddDoctor}
+  onClose={() => setShowAddDoctor(false)}
+  onSave={(newDoctor) => setDoctors([...doctors, { id: doctors.length + 1, ...newDoctor }])}
+/>
+
+<AddTimeSlotModal
+  show={showAddTimeSlot}
+  onClose={() => setShowAddTimeSlot(false)}
+  onSave={(newSlot) => console.log('Saved slot:', newSlot)}
+  doctors={doctors}
+/>
+
 
             <div className="table-responsive">
               <table className="table table-hover">
@@ -159,8 +177,11 @@ const DoctorManagement = () => {
         </div>
 
         </div>
+
         </div>
+        
   );
+  
 };
 
 export default DoctorManagement;
