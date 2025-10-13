@@ -12,6 +12,8 @@ import UserLayout from "./components/layouts/UserLayout"
 import AdminLayout from "./components/layouts/AdminLayout";
 import AppointmentManagement from "./components/admin/pages/AppointmentManagement";
 import DoctorManagement from "./components/admin/pages/DoctorManagement/DoctorManagement";
+import DoctorLayout from "./components/layouts/DoctorLayout";
+import DoctorSidebar from "./components/doctor/component/Doctorsidebar";
 
 function App() {
   // Manually set role for testing
@@ -45,7 +47,20 @@ function App() {
           {/* Add more admin routes here */}
         </Route>
       )}
+
+       {userRole === "doctor" && (
+        <Route element={<DoctorLayout/>}>
+         
+
+
+        </Route>
+      )}
+
+          <Route path="/sidebar" element={<DoctorSidebar/>} />
+
+
     </Routes>
+    
   );
 }
 
