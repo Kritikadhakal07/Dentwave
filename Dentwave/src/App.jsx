@@ -4,6 +4,7 @@ import DentalServicesApp from "./components/user/Pages/ServicePage/DentalService
 import About from "./components/user/Pages/About/About";
 import Contact from "./components/user/Pages/Contact/Contact";
 import Login from "./components/user/Pages/Login/Login";
+import Register from "./components/user/Pages/Login/Register";
 import AdminDashboard from "./components/admin/pages/Adminboard";
 import UserManagement from "./components/admin/pages/UserManagement";
 import PatientManagement from "./components/admin/pages/PatientManagement";
@@ -12,7 +13,7 @@ import UserLayout from "./components/layouts/UserLayout"
 import AdminLayout from "./components/layouts/AdminLayout";
 import AppointmentManagement from "./components/admin/pages/AppointmentManagement";
 import DoctorManagement from "./components/admin/pages/DoctorManagement/DoctorManagement";
-import TestApi from "./TestApi";
+
 
 function App() {
   // Manually set role for testing
@@ -21,7 +22,7 @@ function App() {
 
   return (
     <>
-    <TestApi />
+   
     
     
     <Routes>
@@ -33,6 +34,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Route>
       )}
 

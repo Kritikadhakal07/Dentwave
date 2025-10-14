@@ -2,10 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 
-Route::get('/test-connection', function (Request $request) {
-    return response()->json([
-        'success' => true,
-        'message' => 'Laravel API is working!'
-    ]);
-});
+
+Route::post('/register',[AuthController::class,'register']);
+
+
