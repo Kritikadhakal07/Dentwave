@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Form, Button, Card, Container } from "react-bootstrap";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
+
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -14,10 +13,46 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login data:", formData);
-    // You can handle authentication here
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      // If Laravel returns a 500 or 422, throw an error to catch block
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.message || "Login failed");
+      }
+
+      const data = await res.json();
+
+      // Store token in localStorage (or cookies) for later API calls
+      localStorage.setItem("auth_token", data.token);
+      localStorage.setItem("user_role", data.user.role);
+
+      // Redirect based on role
+      switch (data.user.role) {
+        case "admin":
+          window.location.href = "../../../admin/pages/Adminboard";
+          break;
+        case "doctor":
+          window.location.href = "../../../doctor/pages/doctorboard";
+          break;
+        case "user":
+          window.location.href = "/";
+          break;
+        default:
+          window.location.href = "/";
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      alert(err.message || "Something went wrong. Please try again.");
+    }
   };
 
   return (

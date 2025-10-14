@@ -14,9 +14,9 @@ import AdminLayout from "./components/layouts/AdminLayout";
 import AppointmentManagement from "./components/admin/pages/AppointmentManagement";
 import DoctorManagement from "./components/admin/pages/DoctorManagement/DoctorManagement";
 import DoctorLayout from "./components/layouts/DoctorLayout";
-import DoctorSidebar from "./components/doctor/component/Doctorsidebar";
+
 import DoctorDashboard from "./components/doctor/pages/DoctorDashboard";
-import Doctorsidebar from "./components/doctor/component/Doctorsidebar";
+
 import Appointments from "./components/doctor/pages/Appointments";
 import DoctorProfile from "./components/doctor/pages/DoctorProfile";
 
@@ -62,16 +62,16 @@ function App() {
         <Route element={<DoctorLayout/>}>
          
           <Route path="/doctordashboard" element={<DoctorDashboard/>} />
+          <Route path="/appointments" element={<Appointments/>} />
+          <Route path="/doctorprofile" element={<DoctorProfile/>} />
+
 
 
         </Route>
       )}
 
-          <Route path="/sidebar" element={<DoctorSidebar/>} />
-          <Route path="/doctordashboard" element={<DoctorDashboard/>} />
-          <Route path="/appointments" element={<Appointments/>} />
-          <Route path="/doctorprofile" element={<DoctorProfile/>} />
-
+         
+          
 
 
 
