@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 
-use Illuminate\Support\Facades\Validator; // ✅ validation
-use Illuminate\Support\Facades\Hash;      // ✅ hashing
-use Illuminate\Support\Facades\Auth;      // ✅ auth
+use Illuminate\Support\Facades\Validator; 
+use Illuminate\Support\Facades\Hash;      
+use Illuminate\Support\Facades\Auth;      
 use App\Models\User; 
 use Illuminate\Http\Request;
 
