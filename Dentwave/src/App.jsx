@@ -36,6 +36,7 @@ function App() {
         <Route element={<UserLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/service" element={<DentalServicesApp />} />
+          
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
@@ -50,6 +51,7 @@ function App() {
           <Route path="/usermanagement" element={<UserManagement />} />
           <Route path="/patientmanagement" element={<PatientManagement />} />
           <Route path="/servicemanagement" element={<ServiceManagement />} />
+          
           <Route path="/appointmentmanagement" element={<AppointmentManagement/>} />
           <Route path="/doctormanagement" element={<DoctorManagement/>} />
 

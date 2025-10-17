@@ -1,83 +1,88 @@
-import React, { useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Plus } from 'lucide-react';
 
 export default function ServiceManagement() {
+  const [services, setServices] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
+    image: null,
     serviceName: '',
     description: '',
-    price: '',
-    duration: ''
+    cost: '',
+    duration: '',
+    keyBenefits: '',
+    procedureOverview: ''
   });
 
-  // Sample service data
-  const services = [
-    {
-      id: 1,
-      name: 'General Consultation',
-      description: 'A comprehensive health assessment and discussion of patient concerns with a general practitioner. Includes basic check-up.',
-      price: '$80.00',
-      duration: '30 min'
-    },
-    {
-      id: 2,
-      name: 'Dental Cleaning',
-      description: 'Professional cleaning to remove plaque and tartar, polish teeth, and prevent gum disease. Recommended every six months.',
-      price: '$120.00',
-      duration: '60 min'
-    },
-    {
-      id: 3,
-      name: 'Physical Therapy Session',
-      description: 'Personalized session with a licensed physical therapist to improve mobility, reduce pain, and restore function after injury or surgery. Focuses on exercises and manual therapy.',
-      price: '$100.00',
-      duration: '45 min'
-    },
-    {
-      id: 4,
-      name: 'Eye Exam',
-      description: 'Comprehensive eye examination by an optometrist to assess visual acuity, screen for eye diseases, and update prescriptions. Includes retinal imaging.',
-      price: '$95.00',
-      duration: '40 min'
-    },
-    {
-      id: 5,
-      name: 'Vaccination Clinic',
-      description: 'Administration of various vaccines for preventative health, including seasonal flu shots and routine immunizations. Quick and efficient service.',
-      price: '$50.00',
-      duration: '15 min'
+  // Fetch services from backend
+  const fetchServices = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/services");
+      setServices(res.data);
+    } catch (err) {
+      console.error("Error fetching services:", err);
     }
-  ];
+  };
 
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  // Handle input changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, files } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: files ? files[0] : value
     }));
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    setShowModal(false);
-    setFormData({
-      serviceName: '',
-      description: '',
-      price: '',
-      duration: ''
-    });
+  // Submit new service
+  const handleSubmit = async () => {
+    try {
+      const payload = new FormData();
+      payload.append("name", formData.serviceName);
+      payload.append("description", formData.description);
+      payload.append("cost", formData.cost);
+      payload.append("duration", formData.duration);
+      payload.append("key_benefits", formData.keyBenefits);
+      payload.append("procedure_overview", formData.procedureOverview);
+      if (formData.image) payload.append("image", formData.image);
+
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/services",
+        payload,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      // Add newly created service to the table instantly
+      setServices(prev => [...prev, res.data]);
+
+      // Reset form and close modal
+      setFormData({
+        image: null,
+        serviceName: '',
+        description: '',
+        cost: '',
+        duration: '',
+        keyBenefits: '',
+        procedureOverview: ''
+      });
+      setShowModal(false);
+
+    } catch (err) {
+      console.error("Error adding service:", err);
+    }
   };
 
   return (
     <div className="p-4" style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      
       {/* Page Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Service Management</h2>
-        <button 
-          className="btn btn-primary d-flex align-items-center"
-          onClick={() => setShowModal(true)}
-        >
+        <h2>Service Management</h2>
+        <button className="btn btn-primary d-flex align-items-center" onClick={() => setShowModal(true)}>
           <Plus size={18} className="me-2" />
           Add New Service
         </button>
@@ -90,42 +95,38 @@ export default function ServiceManagement() {
             <table className="table mb-0">
               <thead className="bg-light">
                 <tr>
-                  <th className="border-0 py-3 ps-4" style={{ width: '15%' }}>Service Name</th>
-                  <th className="border-0 py-3" style={{ width: '40%' }}>Description</th>
-                  <th className="border-0 py-3" style={{ width: '12%' }}>Price</th>
-                  <th className="border-0 py-3" style={{ width: '12%' }}>Duration</th>
-                  <th className="border-0 py-3 text-center" style={{ width: '21%' }}>Actions</th>
+                  <th>Image</th>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Price</th>
+                  <th>Duration</th>
+                  <th>Key Benefits</th>
+                  <th>Procedure Overview</th>
+                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {services.map((service) => (
+                {services.map(service => (
                   <tr key={service.id}>
-                    <td className="py-3 ps-4">
-                      <span style={{ fontWeight: '500' }}>{service.name}</span>
+                    <td>
+                      {service.image && (
+                        <img
+                          src={`http://127.0.0.1:8000/storage/${service.image}`}
+                          alt={service.name}
+                          style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px' }}
+                        />
+                      )}
                     </td>
-                    <td className="py-3">
-                      <span className="text-muted" style={{ fontSize: '14px' }}>
-                        {service.description}
-                      </span>
-                    </td>
-                    <td className="py-3">
-                      <span style={{ fontWeight: '500' }}>{service.price}</span>
-                    </td>
-                    <td className="py-3">
-                      <span className="text-muted">{service.duration}</span>
-                    </td>
-                    <td className="py-3">
-                      <div className="d-flex justify-content-center gap-2">
-                        <button className="btn btn-sm btn-link text-primary" style={{ textDecoration: 'none', fontSize: '14px' }}>
-                          Edit
-                        </button>
-                        <button className="btn btn-sm btn-danger" style={{ fontSize: '14px', padding: '4px 16px' }}>
-                          Remove
-                        </button>
-                        <button className="btn btn-sm btn-outline-primary" style={{ fontSize: '14px', padding: '4px 12px' }}>
-                          Update Price
-                        </button>
-                      </div>
+                    <td>{service.name}</td>
+                    <td>{service.description}</td>
+                    <td>{service.cost}</td>
+                    <td>{service.duration}</td>
+                    <td>{service.key_benefits || '—'}</td>
+                    <td>{service.procedure_overview || '—'}</td>
+                    <td className="text-center">
+                      <button className="btn btn-sm btn-link text-primary">Edit</button>
+                      <button className="btn btn-sm btn-danger ms-1">Remove</button>
+                      
                     </td>
                   </tr>
                 ))}
@@ -135,220 +136,69 @@ export default function ServiceManagement() {
         </div>
       </div>
 
-      {/* Add New Service Modal */}
+      {/* Modal */}
       {showModal && (
         <>
-          <div 
-            className="modal-backdrop fade show" 
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={() => setShowModal(false)}
-          ></div>
-
-          <div 
-            className="modal fade show d-block" 
-            tabIndex="-1"
-          >
+          <div className="modal-backdrop fade show" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setShowModal(false)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content border-0 shadow-lg">
                 <div className="modal-header border-bottom">
                   <div>
-                    <h5 className="modal-title mb-1">Add New Service</h5>
-                    <p className="text-muted mb-0" style={{ fontSize: '14px' }}>
-                      Fill in the service details below.
-                    </p>
+                    <h5 className="modal-title">Add New Service</h5>
+                    <p className="text-muted mb-0">Fill in the service details below.</p>
                   </div>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={() => setShowModal(false)}
-                  ></button>
+                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
                 </div>
-
                 <div className="modal-body p-4">
+                  
                   <div className="mb-3">
-                    <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
-                      Service Name
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="serviceName"
-                      value={formData.serviceName}
-                      onChange={handleInputChange}
-                      placeholder="Enter service name"
-                    />
+                    <label className="form-label">Service Image</label>
+                    <input type="file" name="image" accept="image/*" className="form-control" onChange={handleInputChange} />
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
-                      Description
-                    </label>
-                    <textarea
-                      className="form-control"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      placeholder="Enter service description"
-                      rows="4"
-                      style={{ resize: 'none' }}
-                    ></textarea>
+                    <label className="form-label">Service Name</label>
+                    <input type="text" name="serviceName" className="form-control" value={formData.serviceName} onChange={handleInputChange} />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Description</label>
+                    <textarea name="description" className="form-control" value={formData.description} onChange={handleInputChange} rows="3"></textarea>
                   </div>
 
                   <div className="row">
                     <div className="col-6">
-                      <div className="mb-4">
-                        <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
-                          Price
-                        </label>
-                        <div className="input-group">
-                          <span className="input-group-text">$</span>
-                          <input
-                            type="number"
-                            className="form-control"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleInputChange}
-                            placeholder="0.00"
-                            step="0.01"
-                          />
-                        </div>
-                      </div>
+                      <label className="form-label">Price</label>
+                      <input type="number" name="cost" className="form-control" value={formData.cost} onChange={handleInputChange} />
                     </div>
-
                     <div className="col-6">
-                      <div className="mb-4">
-                        <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
-                          Duration
-                        </label>
-                        <div className="input-group">
-                          <input
-                            type="number"
-                            className="form-control"
-                            name="duration"
-                            value={formData.duration}
-                            onChange={handleInputChange}
-                            placeholder="30"
-                          />
-                          <span className="input-group-text">min</span>
-                        </div>
-                      </div>
+                      <label className="form-label">Duration (min)</label>
+                      <input type="number" name="duration" className="form-control" value={formData.duration} onChange={handleInputChange} />
                     </div>
                   </div>
 
-                  <div className="d-flex gap-2 justify-content-end">
-                    <button 
-                      type="button" 
-                      className="btn btn-outline-secondary"
-                      onClick={() => setShowModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      type="button" 
-                      className="btn btn-primary"
-                      onClick={handleSubmit}
-                    >
-                      Add Service
-                    </button>
+                  <div className="mb-3">
+                    <label className="form-label">Key Benefits</label>
+                    <textarea name="keyBenefits" className="form-control" value={formData.keyBenefits} onChange={handleInputChange} rows="2"></textarea>
                   </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Procedure Overview</label>
+                    <textarea name="procedureOverview" className="form-control" value={formData.procedureOverview} onChange={handleInputChange} rows="2"></textarea>
+                  </div>
+
+                  <div className="d-flex justify-content-end gap-2">
+                    <button className="btn btn-outline-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                    <button className="btn btn-primary" onClick={handleSubmit}>Add Service</button>
+                  </div>
+
                 </div>
               </div>
             </div>
           </div>
         </>
       )}
-
-      <style>{`
-        .table tbody tr {
-          transition: background-color 0.2s;
-          border-bottom: 1px solid #e9ecef;
-        }
-
-        .table tbody tr:hover {
-          background-color: #f8f9fa;
-        }
-
-        .btn-link {
-          text-decoration: none;
-          padding: 4px 16px;
-        }
-
-        .btn-link:hover {
-          background-color: #e7f1ff;
-          border-radius: 4px;
-        }
-
-        .modal {
-          display: block;
-        }
-
-        .form-control, .form-select, textarea {
-          border: 1px solid #e0e0e0;
-          padding: 10px 12px;
-          font-size: 14px;
-        }
-
-        .form-control:focus, .form-select:focus, textarea:focus {
-          border-color: #0d6efd;
-          box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
-        }
-
-        .form-label {
-          color: #495057;
-          margin-bottom: 8px;
-        }
-
-        .card {
-          border-radius: 8px;
-        }
-
-        .btn {
-          font-size: 14px;
-        }
-
-        .modal-backdrop {
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 1040;
-          width: 100vw;
-          height: 100vh;
-        }
-
-        .modal.show {
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 1050;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          outline: 0;
-        }
-
-        .modal-dialog {
-          max-width: 600px;
-        }
-
-        .input-group-text {
-          background-color: #f8f9fa;
-          border: 1px solid #e0e0e0;
-          color: #6c757d;
-          font-size: 14px;
-        }
-
-        .table thead th {
-          font-weight: 600;
-          font-size: 13px;
-          color: #6c757d;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .btn-sm {
-          padding: 6px 12px;
-        }
-      `}</style>
     </div>
   );
 }
