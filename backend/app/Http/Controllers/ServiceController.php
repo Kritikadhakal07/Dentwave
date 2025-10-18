@@ -13,7 +13,6 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        // Raw SELECT query
         $services = DB::select("SELECT * FROM services ORDER BY id DESC");
         return response()->json($services);
     }
@@ -57,11 +56,7 @@ class ServiceController extends Controller
         // Get the newly created record
         $service = DB::select("SELECT * FROM services ORDER BY id DESC LIMIT 1");
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Service created successfully',
-            'service' => $service[0]
-        ]);
+        return response()->json($service[0]);
     }
 
     /**
@@ -101,6 +96,7 @@ class ServiceController extends Controller
         // Handle image update
         $imagePath = $existing->image;
         if ($request->hasFile('image')) {
+            // Delete old image if exists
             if ($imagePath && Storage::disk('public')->exists($imagePath)) {
                 Storage::disk('public')->delete($imagePath);
             }
@@ -127,11 +123,7 @@ class ServiceController extends Controller
         // Fetch updated record
         $service = DB::select("SELECT * FROM services WHERE id = ?", [$id]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Service updated successfully',
-            'service' => $service[0]
-        ]);
+        return response()->json($service[0]);
     }
 
     /**
