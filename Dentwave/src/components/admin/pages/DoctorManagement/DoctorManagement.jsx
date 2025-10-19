@@ -1,29 +1,185 @@
-import React, { useState } from 'react';
-import { Search, Bell, User, Plus, Edit, Trash2, Calendar, Settings } from 'lucide-react';
-import AddTimeSlotModal from './AddTimeSlotModal';
-import AddDoctorModal from './AddDoctorModal';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Plus, Edit, Trash2, Calendar } from 'lucide-react';
 
 const DoctorManagement = () => {
-  const [doctors, setDoctors] = useState([
-    { id: 1, name: 'Dr. Evelyn Reed', specialization: 'Pediatrics', experience: '12 years', contact: '555-123-4567', status: 'Active' },
-    { id: 2, name: 'Dr. Marcus Thorne', specialization: 'Cardiology', experience: '18 years', contact: '555-987-6543', status: 'Active' },
-    { id: 3, name: 'Dr. Isabella Cruz', specialization: 'Dermatology', experience: '7 years', contact: '555-555-1212', status: 'On Leave' },
-    { id: 4, name: 'Dr. Benjamin Hayes', specialization: 'Orthopedics', experience: '10 years', contact: '555-222-3333', status: 'Active' },
-    { id: 5, name: 'Dr. Olivia Chen', specialization: 'Neurology', experience: '15 years', contact: '555-444-5555', status: 'Vacation' }
-  ]);
+  const [doctors, setDoctors] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState('');
   const [showAddDoctor, setShowAddDoctor] = useState(false);
-const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
+  const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
+  const [editDoctor, setEditDoctor] = useState(null);
+  const [editTimeSlot, setEditTimeSlot] = useState(null);
 
+  const [doctorForm, setDoctorForm] = useState({
+    name: '',
+    specialization: '',
+    experience: '',
+    contact: '',
+    status: 'Active',
+    image: null
+  });
 
-  const [selectedDoctor, setSelectedDoctor] = useState('Dr. Evelyn Reed');
-  
-  const [availability] = useState([
-    { id: 1, day: 'Monday', startTime: '09:00 AM', endTime: '10:30 AM', status: 'Available' },
-    { id: 2, day: 'Monday', startTime: '10:00 AM', endTime: '11:00 AM', status: 'Available' },
-    { id: 3, day: 'Wednesday', startTime: '01:00 PM', endTime: '02:00 PM', status: 'Booked' }
-  ]);
+  const [timeSlotForm, setTimeSlotForm] = useState({
+    doctor_id: '',
+    day: 'Monday',
+    start_time: '09:00 AM',
+    end_time: '10:00 AM',
+    status: 'Available'
+  });
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDoctor) {
+      fetchTimeSlots(selectedDoctor);
+    }
+  }, [selectedDoctor]);
+
+  const fetchDoctors = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/doctors");
+      setDoctors(res.data);
+      if (res.data.length > 0 && !selectedDoctor) {
+        setSelectedDoctor(res.data[0].id);
+      }
+    } catch (err) {
+      console.error("Error fetching doctors:", err);
+    }
+  };
+
+  const fetchTimeSlots = async (doctorId) => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:8000/api/time-slots/${doctorId}`);
+      setTimeSlots(res.data);
+    } catch (err) {
+      console.error("Error fetching time slots:", err);
+    }
+  };
+
+  const handleDoctorSubmit = async () => {
+    try {
+      const payload = new FormData();
+      payload.append('name', doctorForm.name);
+      payload.append('specialization', doctorForm.specialization);
+      payload.append('experience', doctorForm.experience);
+      payload.append('contact', doctorForm.contact);
+      payload.append('status', doctorForm.status);
+      if (doctorForm.image) payload.append('image', doctorForm.image);
+
+      if (editDoctor) {
+        await axios.post(`http://127.0.0.1:8000/api/doctors/update/${editDoctor.id}`, payload, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      } else {
+        await axios.post("http://127.0.0.1:8000/api/doctors", payload, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      }
+
+      fetchDoctors();
+      setShowAddDoctor(false);
+      setEditDoctor(null);
+      setDoctorForm({
+        name: '',
+        specialization: '',
+        experience: '',
+        contact: '',
+        status: 'Active',
+        image: null
+      });
+    } catch (err) {
+      console.error("Error saving doctor:", err);
+      alert("Error: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeleteDoctor = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this doctor?")) return;
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/doctors/${id}`);
+      fetchDoctors();
+    } catch (err) {
+      console.error("Error deleting doctor:", err);
+      alert("Error deleting doctor");
+    }
+  };
+
+  const openEditDoctor = (doctor) => {
+    setEditDoctor(doctor);
+    setDoctorForm({
+      name: doctor.name,
+      specialization: doctor.specialization,
+      experience: doctor.experience,
+      contact: doctor.contact,
+      status: doctor.status,
+      image: null
+    });
+    setShowAddDoctor(true);
+  };
+
+  const handleTimeSlotSubmit = async () => {
+    try {
+      const payload = {
+        doctor_id: timeSlotForm.doctor_id || selectedDoctor,
+        day: timeSlotForm.day,
+        start_time: timeSlotForm.start_time,
+        end_time: timeSlotForm.end_time,
+        status: timeSlotForm.status
+      };
+
+      console.log("Submitting time slot:", payload); // Debug log
+
+      if (editTimeSlot) {
+        const response = await axios.post(`http://127.0.0.1:8000/api/time-slots/update/${editTimeSlot.id}`, payload);
+        console.log("Update response:", response.data);
+      } else {
+        const response = await axios.post("http://127.0.0.1:8000/api/time-slots", payload);
+        console.log("Create response:", response.data);
+      }
+
+      // Refresh the time slots for the selected doctor
+      await fetchTimeSlots(selectedDoctor);
+      
+      setShowAddTimeSlot(false);
+      setEditTimeSlot(null);
+      setTimeSlotForm({
+        doctor_id: '',
+        day: 'Monday',
+        start_time: '09:00 AM',
+        end_time: '10:00 AM',
+        status: 'Available'
+      });
+    } catch (err) {
+      console.error("Error saving time slot:", err);
+      console.error("Error response:", err.response?.data);
+      alert("Error: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDeleteTimeSlot = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this time slot?")) return;
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/time-slots/${id}`);
+      fetchTimeSlots(selectedDoctor);
+    } catch (err) {
+      console.error("Error deleting time slot:", err);
+    }
+  };
+
+  const openEditTimeSlot = (slot) => {
+    setEditTimeSlot(slot);
+    setTimeSlotForm({
+      doctor_id: slot.doctor_id,
+      day: slot.day,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      status: slot.status
+    });
+    setShowAddTimeSlot(true);
+  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -37,122 +193,119 @@ const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
   };
 
   return (
-    <div style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }} className="d-flex" >
-     
-      {/* Main Content */}
-      <div className="flex-grow-1" style={{ marginLeft: '0' }}>
-        <div className="d-lg-none d-block" style={{ marginLeft: '0' }}></div>
-        <div className="d-none d-lg-block" style={{ marginLeft: '250px' }}></div>
-        
-      
+    <div style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      <div className="p-4">
+        <h2 className="mb-4">Doctor Management</h2>
 
-        {/* Page Content */}
-        <div className="p-4">
-          <h2 className="mb-4">Doctor Management</h2>
+        {/* Doctor Roster */}
+        <div className="bg-white rounded shadow-sm p-4 mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="mb-0">Doctor Roster</h5>
+            <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddDoctor(true)}>
+              <Plus size={16} className="me-1" />
+              Add Doctor
+            </button>
+          </div>
 
-          {/* Doctor Roster */}
-          <div className="bg-white rounded shadow-sm p-4 mb-4">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="mb-0">Doctor Roster</h5>
-             <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddDoctor(true)}>
-  <Plus size={16} className="me-1" />
-  Add Doctor
-</button>
-
-            </div>
-
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead className="table-light">
-                  <tr>
-                    <th>Name</th>
-                    <th className="d-none d-md-table-cell">Specialization</th>
-                    <th className="d-none d-lg-table-cell">Experience</th>
-                    <th className="d-none d-sm-table-cell">Contact</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctors.map(doctor => (
-                    <tr key={doctor.id}>
-                      <td>{doctor.name}</td>
-                      <td className="d-none d-md-table-cell">{doctor.specialization}</td>
-                      <td className="d-none d-lg-table-cell">{doctor.experience}</td>
-                      <td className="d-none d-sm-table-cell">{doctor.contact}</td>
-                      <td>
-                        <span className={`badge bg-${getStatusColor(doctor.status)}`}>
-                          {doctor.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <button className="btn btn-sm btn-outline-secondary">
-                            <Edit size={14} />
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger">
-                            <Trash2 size={14} />
-                          </button>
+          <div className="table-responsive">
+            <table className="table table-hover">
+              <thead className="table-light">
+                <tr>
+                  <th>Image</th>
+                  <th>Name</th>
+                  <th>Specialization</th>
+                  <th>Experience</th>
+                  <th>Contact</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {doctors.map(doctor => (
+                  <tr key={doctor.id}>
+                    <td>
+                      {doctor.image ? (
+                        <img
+                          src={`http://127.0.0.1:8000/storage/${doctor.image}`}
+                          alt={doctor.name}
+                          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%' }}
+                        />
+                      ) : (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e3f2fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#1976d2' }}>
+                          {doctor.name.charAt(0)}
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                    </td>
+                    <td>{doctor.name}</td>
+                    <td>{doctor.specialization}</td>
+                    <td>{doctor.experience}</td>
+                    <td>{doctor.contact}</td>
+                    <td>
+                      <span className={`badge bg-${getStatusColor(doctor.status)}`}>
+                        {doctor.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditDoctor(doctor)}>
+                          <Edit size={14} />
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteDoctor(doctor.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Doctor Availability */}
+        <div className="bg-white rounded shadow-sm p-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="mb-0">Doctor Availability</h5>
+            <div className="d-flex gap-2">
+              <select className="form-select form-select-sm" style={{ maxWidth: '200px' }}
+                value={selectedDoctor}
+                onChange={(e) => setSelectedDoctor(e.target.value)}
+              >
+                {doctors.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddTimeSlot(true)}>
+                <Calendar size={16} className="me-1" />
+                Add Time Slot
+              </button>
             </div>
           </div>
 
-          {/* Doctor Availability */}
-          <div className="bg-white rounded shadow-sm p-4">
-            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
-              <h5 className="mb-0">Doctor Availability</h5>
-              <div className="d-flex gap-2 w-100 w-md-auto">
-                <select className="form-select form-select-sm" style={{ maxWidth: '200px' }}
-                  value={selectedDoctor}
-                  onChange={(e) => setSelectedDoctor(e.target.value)}
-                >
-                  {doctors.map(d => (
-                    <option key={d.id} value={d.name}>{d.name}</option>
-                  ))}
-                </select>
-               <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddTimeSlot(true)}>
-  <Calendar size={16} className="me-1" />
-  Add Time Slot
-</button>
-
-              </div>
-            </div>
-  <AddDoctorModal
-  show={showAddDoctor}
-  onClose={() => setShowAddDoctor(false)}
-  onSave={(newDoctor) => setDoctors([...doctors, { id: doctors.length + 1, ...newDoctor }])}
-/>
-
-<AddTimeSlotModal
-  show={showAddTimeSlot}
-  onClose={() => setShowAddTimeSlot(false)}
-  onSave={(newSlot) => console.log('Saved slot:', newSlot)}
-  doctors={doctors}
-/>
-
-
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead className="table-light">
+          <div className="table-responsive">
+            <table className="table table-hover">
+              <thead className="table-light">
+                <tr>
+                  <th>Day</th>
+                  <th>Start Time</th>
+                  <th>End Time</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeSlots.length === 0 ? (
                   <tr>
-                    <th>Day</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <td colSpan="5" className="text-center text-muted py-4">
+                      No time slots available for this doctor. Click "Add Time Slot" to create one.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {availability.map(slot => (
+                ) : (
+                  timeSlots.map(slot => (
                     <tr key={slot.id}>
                       <td>{slot.day}</td>
-                      <td>{slot.startTime}</td>
-                      <td>{slot.endTime}</td>
+                      <td>{slot.start_time}</td>
+                      <td>{slot.end_time}</td>
                       <td>
                         <span className={`badge bg-${getStatusColor(slot.status)}`}>
                           {slot.status}
@@ -160,28 +313,121 @@ const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
                       </td>
                       <td>
                         <div className="d-flex gap-2">
-                          <button className="btn btn-sm btn-outline-secondary">
+                          <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditTimeSlot(slot)}>
                             <Edit size={14} />
                           </button>
-                          <button className="btn btn-sm btn-outline-danger">
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTimeSlot(slot.id)}>
                             <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        </div>
+        {/* Add/Edit Doctor Modal */}
+        {showAddDoctor && (
+          <>
+            <div className="modal-backdrop fade show" onClick={() => { setShowAddDoctor(false); setEditDoctor(null); }}></div>
+            <div className="modal fade show d-block" tabIndex="-1">
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">{editDoctor ? 'Edit Doctor' : 'Add Doctor'}</h5>
+                    <button type="button" className="btn-close" onClick={() => { setShowAddDoctor(false); setEditDoctor(null); }}></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Profile Image</label>
+                      <input type="file" className="form-control" accept="image/*" onChange={(e) => setDoctorForm({...doctorForm, image: e.target.files[0]})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Full Name</label>
+                      <input className="form-control" value={doctorForm.name} onChange={(e) => setDoctorForm({...doctorForm, name: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Specialization</label>
+                      <input className="form-control" value={doctorForm.specialization} onChange={(e) => setDoctorForm({...doctorForm, specialization: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Experience</label>
+                      <input className="form-control" value={doctorForm.experience} onChange={(e) => setDoctorForm({...doctorForm, experience: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Contact</label>
+                      <input className="form-control" value={doctorForm.contact} onChange={(e) => setDoctorForm({...doctorForm, contact: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Status</label>
+                      <select className="form-select" value={doctorForm.status} onChange={(e) => setDoctorForm({...doctorForm, status: e.target.value})}>
+                        <option>Active</option>
+                        <option>On Leave</option>
+                        <option>Vacation</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button onClick={() => { setShowAddDoctor(false); setEditDoctor(null); }} className="btn btn-secondary">Cancel</button>
+                    <button onClick={handleDoctorSubmit} className="btn btn-primary">{editDoctor ? 'Update' : 'Save'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
-        </div>
-        
+        {/* Add/Edit Time Slot Modal */}
+        {showAddTimeSlot && (
+          <>
+            <div className="modal-backdrop fade show" onClick={() => { setShowAddTimeSlot(false); setEditTimeSlot(null); }}></div>
+            <div className="modal fade show d-block" tabIndex="-1">
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">{editTimeSlot ? 'Edit Time Slot' : 'Add Time Slot'}</h5>
+                    <button type="button" className="btn-close" onClick={() => { setShowAddTimeSlot(false); setEditTimeSlot(null); }}></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Day</label>
+                      <select className="form-select" value={timeSlotForm.day} onChange={(e) => setTimeSlotForm({...timeSlotForm, day: e.target.value})}>
+                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                          <option key={day}>{day}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Start Time</label>
+                      <input type="time" className="form-control" value={timeSlotForm.start_time} onChange={(e) => setTimeSlotForm({...timeSlotForm, start_time: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">End Time</label>
+                      <input type="time" className="form-control" value={timeSlotForm.end_time} onChange={(e) => setTimeSlotForm({...timeSlotForm, end_time: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Status</label>
+                      <select className="form-select" value={timeSlotForm.status} onChange={(e) => setTimeSlotForm({...timeSlotForm, status: e.target.value})}>
+                        <option>Available</option>
+                        <option>Booked</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button onClick={() => { setShowAddTimeSlot(false); setEditTimeSlot(null); }} className="btn btn-secondary">Cancel</button>
+                    <button onClick={handleTimeSlotSubmit} className="btn btn-primary">{editTimeSlot ? 'Update' : 'Save'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
-  
 };
 
 export default DoctorManagement;
