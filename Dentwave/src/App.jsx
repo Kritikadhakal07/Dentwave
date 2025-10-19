@@ -23,7 +23,7 @@ import DoctorProfile from "./components/doctor/pages/DoctorProfile";
 function App() {
   // Manually set role for testing
   // Change this to "admin" to test admin layout
-  const userRole = "admin"; // or "admin"
+  const userRole = "user"; // or "admin"
 
   return (
     <>
