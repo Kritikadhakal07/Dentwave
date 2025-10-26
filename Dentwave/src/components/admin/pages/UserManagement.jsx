@@ -31,10 +31,7 @@ export default function UserManagement() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -129,17 +126,18 @@ export default function UserManagement() {
   return (
     <div className="p-4" style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       <div className="mb-3">
-        <span className="text-muted" style={{ fontSize: '14px' }}>Dashboard / User Management</span>
+        <span className="text-muted" style={{ fontSize: '14px' }}>
+          Dashboard / User Management
+        </span>
       </div>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">User Management</h2>
-        <button 
+        <button
           className="btn btn-primary d-flex align-items-center"
           onClick={() => setShowModal(true)}
         >
-          <Plus size={18} className="me-2" />
-          Add User
+          <Plus size={18} className="me-2" /> Add User
         </button>
       </div>
 
@@ -157,7 +155,6 @@ export default function UserManagement() {
                   <th className="border-0 py-3">Phone</th>
                   <th className="border-0 py-3">Gender</th>
                   <th className="border-0 py-3">Role</th>
-                  <th className="border-0 py-3">Status</th>
                   <th className="border-0 py-3 text-center">Actions</th>
                 </tr>
               </thead>
@@ -166,15 +163,15 @@ export default function UserManagement() {
                   <tr key={user.id}>
                     <td className="py-3 ps-4">
                       <div className="d-flex align-items-center">
-                        <div 
+                        <div
                           className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                          style={{ 
-                            width: '40px', 
-                            height: '40px', 
+                          style={{
+                            width: '40px',
+                            height: '40px',
                             backgroundColor: '#e3f2fd',
                             color: '#1976d2',
                             fontWeight: '600',
-                            fontSize: '14px'
+                            fontSize: '14px',
                           }}
                         >
                           {getInitials(user.name)}
@@ -196,15 +193,7 @@ export default function UserManagement() {
                         {getRoleDisplayName(user.role)}
                       </span>
                     </td>
-                    <td className="py-3">
-                      <span 
-                        className={`badge ${getStatusBadgeClass(user.status)}`}
-                        style={{ fontSize: '12px', padding: '4px 12px' }}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="py-3">
+                    <td className="py-3 text-center">
                       <div className="d-flex justify-content-center gap-2">
                         <button 
                           className="btn btn-sm btn-link text-secondary p-1" 
@@ -224,6 +213,13 @@ export default function UserManagement() {
                     </td>
                   </tr>
                 ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4 text-muted">
+                      No users found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -246,9 +242,8 @@ export default function UserManagement() {
             }}
             onClick={closeModal}
           ></div>
-
-          <div 
-            className="modal fade show d-block" 
+          <div
+            className="modal fade show d-block"
             tabIndex="-1"
             style={{
               position: 'fixed',
@@ -281,10 +276,12 @@ export default function UserManagement() {
                     onClick={closeModal}
                   ></button>
                 </div>
-
                 <div className="modal-body p-4">
                   <div className="mb-3">
-                    <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
+                    <label
+                      className="form-label"
+                      style={{ fontSize: '14px', fontWeight: '500' }}
+                    >
                       Name
                     </label>
                     <input
@@ -296,9 +293,11 @@ export default function UserManagement() {
                       placeholder="Enter full name"
                     />
                   </div>
-
                   <div className="mb-3">
-                    <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
+                    <label
+                      className="form-label"
+                      style={{ fontSize: '14px', fontWeight: '500' }}
+                    >
                       Email
                     </label>
                     <input
@@ -310,7 +309,6 @@ export default function UserManagement() {
                       placeholder="Enter email address"
                     />
                   </div>
-
                   <div className="mb-3">
                     <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
                       Phone
@@ -355,9 +353,11 @@ export default function UserManagement() {
                       placeholder="Enter password"
                     />
                   </div>
-
                   <div className="mb-3">
-                    <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
+                    <label
+                      className="form-label"
+                      style={{ fontSize: '14px', fontWeight: '500' }}
+                    >
                       Role
                     </label>
                     <select
@@ -387,17 +387,16 @@ export default function UserManagement() {
                       <option value="Inactive">Inactive</option>
                     </select>
                   </div>
-
                   <div className="d-flex gap-2 justify-content-end">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn btn-outline-secondary"
                       onClick={closeModal}
                     >
                       Cancel
                     </button>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn btn-primary"
                       onClick={handleSubmit}
                     >
