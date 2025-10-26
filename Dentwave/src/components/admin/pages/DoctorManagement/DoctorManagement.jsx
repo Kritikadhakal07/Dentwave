@@ -37,7 +37,7 @@ const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
   };
 
   return (
-    <div style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }} className="d-flex" >
+    <div style={{ marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }} className="d-flex" >
      
       {/* Main Content */}
       <div className="flex-grow-1" style={{ marginLeft: '0' }}>

@@ -1,7 +1,5 @@
 import React from 'react';
 import { Calendar, AlertCircle, UserCheck, RefreshCw, User, Clock, Plus, UserPlus, Search, Bell } from 'lucide-react';
-import Header from '../component/Header';
-import Sidebar from '../component/Sidebar';
 function MainContent() {
   const metrics = [
     { label: 'Total Appointments Today', value: '120', icon: <Calendar size={20} className="text-primary" /> },
@@ -58,13 +56,11 @@ function MainContent() {
 export default function AdminDashboard() {
   return (
     <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-      {/* Sidebar */}
-      <Sidebar />
+     
 
       {/* Main Content Area */}
-      <div style={{ marginLeft: '240px', width: 'calc(100% - 240px)' }}>
-        {/* Header */}
-        <Header />
+      <div style={{  width: 'calc(100% - 240px)' }}>
+      
 
         {/* Main Content */}
         <MainContent />

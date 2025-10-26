@@ -22,9 +22,6 @@ const { name, value } = e.target;
     e.preventDefault();
     setLoading(true);
     
-    
-
-
 
     try {
       const res = await axios.post("http://127.0.0.1:8000/api/contact", formData);

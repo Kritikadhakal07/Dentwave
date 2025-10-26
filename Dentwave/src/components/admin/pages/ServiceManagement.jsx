@@ -70,7 +70,7 @@ export default function ServiceManagement() {
   };
 
   return (
-    <div className="p-4" style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+    <div className="p-4" style={{  marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
       {/* Page Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">Service Management</h2>

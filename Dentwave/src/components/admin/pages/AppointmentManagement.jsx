@@ -12,7 +12,7 @@ export default function AppointmentManagement() {
   ]);
 
   return (
-    <div style={{ marginLeft: '240px', marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }} className="d-flex vh-100 ">
+    <div style={{  marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }} className="d-flex vh-100 ">
      
     
 

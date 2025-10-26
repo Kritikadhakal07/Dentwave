@@ -60,8 +60,8 @@ export default function UserManagement() {
     <div
       className="p-4"
       style={{
-        marginLeft: '240px',
-        marginTop: '60px',
+       
+        marginTop: '80px',
         backgroundColor: '#f8f9fa',
         minHeight: '100vh',
       }}
