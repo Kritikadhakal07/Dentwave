@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
         $table->enum('gender', ['male','female','other'])->nullable();
         $table->enum('role', ['admin','user','doctor'])->default('user');
+        
         });
     }
 
