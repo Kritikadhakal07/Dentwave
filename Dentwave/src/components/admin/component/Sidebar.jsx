@@ -76,7 +76,7 @@ const Sidebar = () => {
         </Nav.Link>
 
         <Nav.Link
-          href="/profile"
+          href="/adminprofile"
           style={{color:"gray"  }}
 
           className="d-flex align-items-center gap-2 rounded-2 px-2 py-2 sidebar-link"

@@ -19,6 +19,7 @@ import DoctorDashboard from "./components/doctor/pages/DoctorDashboard";
 
 import Appointments from "./components/doctor/pages/Appointments";
 import DoctorProfile from "./components/doctor/pages/DoctorProfile";
+import AdminProfile from "./components/admin/pages/AdminProfile";
 
 function App() {
   // Manually set role for testing
@@ -52,6 +53,8 @@ function App() {
           <Route path="/servicemanagement" element={<ServiceManagement />} />
           <Route path="/appointmentmanagement" element={<AppointmentManagement/>} />
           <Route path="/doctormanagement" element={<DoctorManagement/>} />
+          <Route path="/adminprofile" element={<AdminProfile/>} />
+
 
 
           {/* Add more admin routes here */}
