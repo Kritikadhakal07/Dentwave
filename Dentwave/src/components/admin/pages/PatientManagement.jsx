@@ -1,19 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Plus, Eye, Edit, Trash2 } from 'lucide-react';
+import axios from 'axios';
+
 
 export default function PatientManagement() {
+  const[patient, setPatient]= useState([]);
+  const[loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
 const [editFormData, setEditFormData] = useState({
   name: '',
   contact: '',
   address: '',
   status: 'Active',
-  medicalHistory: ''
+ 
 });
+
+const fetchPatient = async () => {
+  try{
+    const res = await axios.get("http://127.0.0.1:8000/api/patients");
+    setPatient(res.data);
+  }catch (err){
+    console.error("Error fetching patients:" , err);
+  } finally{
+    setLoading(false);
+  }
+};
+
+
+useEffect(() =>{
+  fetchPatient();
+},[]);
+
+  
+  // Add new patient
+  const handleAdd = async () => {
+    try {
+      await axios.post(`http://127.0.0.1:8000/api/patients`, formData);
+      alert("Patient added successfully!");
+      setShowAddModal(false);
+      fetchPatient();
+    } catch (err) {
+      console.error("Error adding patient:", err);
+    }
+  };
 
 // Open edit modal with selected patient data
 const handleEdit = (patient) => {
@@ -23,106 +57,47 @@ const handleEdit = (patient) => {
     contact: patient.contact,
     address: patient.address,
     status: patient.status,
-    medicalHistory: patient.medicalHistory || ''
   });
   setShowEditModal(true);
 };
 
-// Handle input changes in edit modal
-const handleEditChange = (e) => {
-  const { name, value } = e.target;
-  setEditFormData(prev => ({ ...prev, [name]: value }));
-};
 
-// Handle save changes (static for now)
-const handleEditSubmit = () => {
-  console.log('Edited patient data:', editFormData);
-  alert('Patient updated successfully (static demo)');
-  setShowEditModal(false);
-};
-
-    // Add patient form state
-  const [formData, setFormData] = useState({
-    name: '',
-    contact: '',
-    address: '',
-    status: 'Active',
-   
-  });
-
-  // Handle input change
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  // Handle form submission (static only for now)
-  const handleSubmit = () => {
-    console.log('New patient data:', formData);
-    alert('Patient added successfully (static demo)');
-    setShowAddModal(false);
-    setFormData({
-      name: '',
-      contact: '',
-      address: '',
-      status: 'Active',
-    
-    });
-  };
-
-
-  // Static patient data (mocked)
-  const patients = [
-    { 
-      id: 1,
-      name: 'Alice Johnson',
-      contact: 'alice@example.com',
-      address: '123 Oak Ave, City, Country',
-      appointments: 5,
-      lastPayment: 'Paid',
-      status: 'Active',
-      medicalHistory: 'Seasonal allergies, last check-up 2023.',
-      avatar: 'AJ',
-      appointmentHistory: [
-        { date: '2025-10-12', doctor: 'Dr. Sharma', treatment: 'Root Canal', status: 'Completed' },
-        { date: '2025-09-20', doctor: 'Dr. Lama', treatment: 'Cleaning', status: 'Paid' }
-      ],
-      paymentHistory: [
-        { txnId: 'TXN-1234', amount: 'Rs. 1500', method: 'Khalti', status: 'Paid', date: '2025-10-12' },
-        { txnId: 'TXN-1220', amount: 'Rs. 800', method: 'eSewa', status: 'Paid', date: '2025-09-20' }
-      ]
-    },
-    { 
-      id: 2,
-      name: 'Bob Williams',
-      contact: 'bob@example.com',
-      address: '456 Pine St, City, Country',
-      appointments: 3,
-      lastPayment: 'Pending',
-      status: 'Inactive',
-      medicalHistory: 'Hypertension, regular monitoring required.',
-      avatar: 'BW',
-      appointmentHistory: [
-        { date: '2025-09-10', doctor: 'Dr. Lama', treatment: 'Check-up', status: 'Pending' }
-      ],
-      paymentHistory: [
-        { txnId: 'TXN-1210', amount: 'Rs. 500', method: 'Cash', status: 'Pending', date: '2025-09-10' }
-      ]
+ //  View patient details
+  const handleView = async (id) => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:8000/api/patients/${id}`);
+      setSelectedPatient(res.data);
+      setShowDetailsModal(true);
+    } catch (err) {
+      console.error("Error fetching patient details:", err);
     }
-  ];
-
-  const handleViewDetails = (patient) => {
-    setSelectedPatient(patient);
-    setShowDetailsModal(true);
   };
 
-  const getStatusBadgeClass = (status) => status === 'Active' ? 'bg-success' : 'bg-secondary';
-
-  const getPaymentBadge = (paymentStatus) => {
-    if (paymentStatus === 'Paid') return 'bg-success';
-    if (paymentStatus === 'Pending') return 'bg-warning text-dark';
-    return 'bg-secondary';
+  // Update patient
+  const handleUpdate = async () => {
+    try {
+      await axios.put(`http://127.0.0.1:8000/api/patients/${selectedPatient.id}`, formData);
+      alert("Patient updated successfully!");
+      setShowEditModal(false);
+      fetchPatient();
+    } catch (err) {
+      console.error("Error updating patient:", err);
+    }
   };
+
+  //  Delete patient
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this patient?")) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/api/patients/${id}`);
+        alert("Patient deleted successfully!");
+        fetchPatient();
+      } catch (err) {
+        console.error("Error deleting patient:", err);
+      }
+    }
+  };
+ 
 
   return (
     <div className="p-4" style={{ marginTop: '60px', backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
@@ -152,7 +127,7 @@ const handleEditSubmit = () => {
                 </tr>
               </thead>
               <tbody>
-                {patients.map((p) => (
+                {patient.map((p) => (
                   <tr key={p.id}>
                     <td className="py-3 ps-4">
                       <div className="d-flex align-items-center">
@@ -179,11 +154,11 @@ const handleEditSubmit = () => {
                       </span>
                     </td>
                     <td className="py-3 text-center">
-                      <button className="btn btn-sm btn-link text-secondary" onClick={() => handleViewDetails(p)} title="View">
+                      <button className="btn btn-sm btn-link text-secondary" onClick={() => handleView(p)} title="View">
                         <Eye size={18} />
                       </button>
-                      <button className="btn btn-sm btn-link text-secondary" title="Edit" onClick={() => setShowEditModal(true)}><Edit size={18} /></button>
-                      <button className="btn btn-sm btn-link text-danger" title="Delete"><Trash2 size={18} /></button>
+                      <button className="btn btn-sm btn-link text-secondary" title="Edit" onClick={() => handleEdit(p)}><Edit size={18} /></button>
+                      <button className="btn btn-sm btn-link text-danger" title="Delete" onClick={() => handleDelete(p)}><Trash2 size={18} /></button>
                     </td>
                   </tr>
                 ))}
@@ -388,20 +363,7 @@ const handleEditSubmit = () => {
               </select>
             </div>
 
-            <div className="mb-4">
-              <label className="form-label" style={{ fontSize: '14px', fontWeight: '500' }}>
-                Medical History
-              </label>
-              <textarea
-                className="form-control"
-                name="medicalHistory"
-                value={editFormData.medicalHistory}
-                onChange={handleEditChange}
-                placeholder="Enter medical history"
-                rows="3"
-                style={{ resize: 'none' }}
-              ></textarea>
-            </div>
+           
 
             <div className="d-flex gap-2 justify-content-end">
               <button 
