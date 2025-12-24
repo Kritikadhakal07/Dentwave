@@ -21,9 +21,8 @@ import Appointments from "./components/doctor/pages/Appointments";
 import DoctorProfile from "./components/doctor/pages/DoctorProfile";
 
 function App() {
-  // Manually set role for testing
-  // Change this to "admin" to test admin layout
-  const userRole = "user"; // or "admin"
+ 
+  const userRole = "doctor"; 
 
   return (
     <>
