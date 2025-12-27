@@ -34,7 +34,7 @@ class AuthController extends Controller
         // Using raw SQL for consistency
         DB::insert(
             "INSERT INTO users (name, email, password, phone, gender, role, status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 'Patient', 'Active', NOW(), NOW())",
+             VALUES (?, ?, ?, ?, ?, 'user', 'Active', NOW(), NOW())",
             [
                 $request->name,
                 $request->email,
