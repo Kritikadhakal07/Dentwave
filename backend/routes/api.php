@@ -32,20 +32,27 @@ Route::post('/doctors/update/{id}', [DoctorController::class, 'update']);
 Route::delete('/doctors/{id}', [DoctorController::class, 'destroy']);
 
 
-        Route::post('/time-slots', [TimeSlotController::class, 'store']);
-        Route::post('/time-slots/update/{id}', [TimeSlotController::class, 'update']);
-        Route::delete('/time-slots/{id}', [TimeSlotController::class, 'destroy']);
-
-        Route::get('/time-slots/{doctorId}', [TimeSlotController::class, 'getByDoctor']);
+ Route::post('/time-slots', [TimeSlotController::class, 'store']);
+ Route::post('/time-slots/update/{id}', [TimeSlotController::class, 'update']);
+Route::delete('/time-slots/{id}', [TimeSlotController::class, 'destroy']);
+Route::get('/time-slots/{doctorId}', [TimeSlotController::class, 'getByDoctor']);
         
 
 
-        // Appointment Management (admin can view all, update, delete)
-        Route::get('/appointments', [AppointmentController::class, 'index']);
-        Route::post('/appointments/update/{id}', [AppointmentController::class, 'update']);
-        Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+ // Appointment Management (admin can view all, update, delete)
+ Route::get('/appointments', [AppointmentController::class, 'index']);
+ Route::post('/appointments/update/{id}', [AppointmentController::class, 'update']);
+Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
 
 
-        // Appointment Management (user can view own, update, delete)
-        Route::get('/appointments/user/{userId}', [AppointmentController::class, 'getByUser']);
-        Route::post('/appointments', [AppointmentController::class, 'store']);
+// Appointment Management (user can view own, update, delete)
+Route::get('/appointments/user/{userId}', [AppointmentController::class, 'getByUser']);
+Route::post('/appointments', [AppointmentController::class, 'store']);
+
+
+//Patient management
+ Route::get('/patients', [PatientController::class, 'index']);
+Route::post('/patients', [PatientController::class, 'store']);
+Route::put('/patients/{id}', [PatientController::class, 'update']);
+Route::delete('/patients/{id}', [PatientController::class, 'destroy']);
+Route::get('/patients/{id}', [PatientController::class, 'show']);

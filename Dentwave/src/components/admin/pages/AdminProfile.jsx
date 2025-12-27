@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
+import axios from "axios";
 import {
   Card,
   Button,
@@ -10,33 +11,40 @@ import {
 import { CameraFill } from "react-bootstrap-icons";
 
 const AdminProfile = () => {
-  const [admin, setAdmin] = useState({
-    name: "Dr. Priya Sharma",
-    position: "Admin - Dental Management System",
-    email: "priya.sharma@dentwave.com",
-    phone: "+977 9812345678",
-    image: "https://cdn-icons-png.flaticon.com/512/3774/3774299.png",
-  });
+  const [admin, setAdmin] = useState(null);
+    const [formData, setFormData] = useState({});
 
-  const [showModal, setShowModal] = useState(false);
-
-  // Handle image upload
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setAdmin({ ...admin, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+      const adminId = 1;
+  
+ //  Fetch admin data
+  const fetchAdmin = async () => {
+    try {
+      const res = await axios.get(`http://127.0.0.1:8000/api/admin/${adminId}`);
+      setAdmin(res.data);
+      setFormData(res.data);
+    } catch (err) {
+      console.error("Error fetching admin:", err);
     }
   };
 
-  // Handle form field changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAdmin((prev) => ({ ...prev, [name]: value }));
+   useEffect(() => {
+    fetchAdmin();
+  }, []);
+
+  // 🟠 Update profile
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`http://127.0.0.1:8000/api/admin/${adminId}`, formData);
+      alert(res.data.message);
+      fetchAdmin();
+    } catch (err) {
+      console.error("Error updating admin:", err);
+    }
   };
+  if (!admin) return <p>Loading profile...</p>;
+  
+  
 
   return (
     <div
