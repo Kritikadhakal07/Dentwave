@@ -22,7 +22,7 @@ import DoctorProfile from "./components/doctor/pages/DoctorProfile";
 
 function App() {
  
-  const userRole = "doctor"; 
+  const userRole = "user"; 
 
   return (
     <>
