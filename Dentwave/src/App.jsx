@@ -24,7 +24,7 @@ import AdminProfile from "./components/admin/pages/AdminProfile";
 function App() {
   // Manually set role for testing
   // Change this to "admin" to test admin layout
-  const userRole = "admin"; // or "admin"
+  const userRole = "user"; // or "admin"
 
   return (
     <>
