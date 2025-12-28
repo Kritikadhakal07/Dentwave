@@ -1,13 +1,19 @@
 import React, { useState } from "react";
-import { Form, Button, Card, Container } from "react-bootstrap";
+import { Form, Button, Card, Container, Alert } from "react-bootstrap";
 import { FaEnvelope, FaLock } from "react-icons/fa";
-
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../contexts/AuthContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,6 +21,8 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
       const res = await fetch("http://127.0.0.1:8000/api/login", {
@@ -23,40 +31,32 @@ const Login = () => {
         body: JSON.stringify(formData),
       });
 
-      // If Laravel returns a 500 or 422, throw an error to catch block
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.message || "Login failed");
-      }
-
       const data = await res.json();
 
-      // Store token in localStorage (or cookies) for later API calls
-      localStorage.setItem("auth_token", data.token);
-      localStorage.setItem("user_role", data.user.role);
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Store user data and token using AuthContext
+      login(data.user, data.token);
 
       // Redirect based on role
-      switch (data.user.role) {
-        case "admin":
-          window.location.href = "../../../admin/pages/Adminboard";
-          break;
-        case "doctor":
-          window.location.href = "../../../doctor/pages/doctorboard";
-          break;
-        case "user":
-          window.location.href = "/";
-          break;
-        default:
-          window.location.href = "/";
+      if (data.user.role === "admin") {
+        navigate("/admindashboard");
+      } else if (data.user.role === "doctor") {
+        navigate("/doctordashboard");
+      } else {
+        navigate("/");
       }
     } catch (err) {
       console.error("Login error:", err);
-      alert(err.message || "Something went wrong. Please try again.");
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
     <div
       style={{
         background: "linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%)",
@@ -70,7 +70,6 @@ const Login = () => {
           className="shadow-sm p-4"
           style={{
             width: "600px",
-            
             borderRadius: "10px",
             border: "none",
           }}
@@ -81,10 +80,11 @@ const Login = () => {
             </h4>
             <h5 className="fw-bold mt-2">Welcome Back!</h5>
             <p className="text-muted small">
-              Log in to manage your appointments and access personalized dental
-              care.
+              Log in to manage your appointments and access personalized dental care.
             </p>
           </div>
+
+          {error && <Alert variant="danger">{error}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group controlId="formEmail" className="mb-3">
@@ -131,15 +131,24 @@ const Login = () => {
               variant="primary"
               type="submit"
               className="w-100"
+              disabled={loading}
               style={{ backgroundColor: "#0056d2", border: "none" }}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </Form>
+
+          <div className="text-center mt-3">
+            <p className="text-muted small">
+              Don't have an account?{" "}
+              <a href="/register" className="text-primary text-decoration-none">
+                Register here
+              </a>
+            </p>
+          </div>
         </Card>
       </Container>
     </div>
-    </>
   );
 };
 

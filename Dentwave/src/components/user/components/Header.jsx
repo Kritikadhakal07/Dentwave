@@ -1,10 +1,13 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
 import './header.css';
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -16,6 +19,27 @@ function Header() {
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      // Call Laravel logout API
+      await fetch('http://127.0.0.1:8000/api/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
+    logout();
+    closeMenu();
+    navigate('/');
   };
 
   return (
@@ -85,12 +109,35 @@ function Header() {
 
           {/* Right Section - Auth & CTA */}
           <div className="d-flex align-items-center gap-2">
-            <Link to="/login" className="btn btn-outline-primary" onClick={closeMenu}>
-              Login
-            </Link>
-            <Link to="/register" className="btn btn-outline-secondary" onClick={closeMenu}>
-              Register
-            </Link>
+            {isAuthenticated() ? (
+              // Logged In User
+              <>
+                <div className="d-flex align-items-center gap-2 px-3 py-2 bg-light rounded">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                    <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                  </svg>
+                  <span className="fw-semibold text-dark">{user?.name}</span>
+                </div>
+                <button 
+                  className="btn btn-outline-danger"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              // Not Logged In
+              <>
+                <Link to="/login" className="btn btn-outline-primary" onClick={closeMenu}>
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-outline-secondary" onClick={closeMenu}>
+                  Register
+                </Link>
+              </>
+            )}
+            
             <button className="btn btn-primary btn-book d-flex align-items-center gap-2 justify-content-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
