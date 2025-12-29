@@ -44,7 +44,7 @@ const ServiceDetailsPage = ({ service, onBack, onAddToAppointment }) => {
             <div className="d-flex flex-wrap gap-4 mb-4 pb-4 border-bottom">
               <div className="d-flex align-items-center gap-2 text-muted">
                 <Clock size={20} className="text-primary" />
-                <span>Duration: {service.duration || "N/A"}</span>
+                <span>Duration: {service.duration || "N/A"} min</span>
               </div>
               <div className="d-flex align-items-center gap-2 text-muted">
                 <DollarSign size={20} className="text-primary" />

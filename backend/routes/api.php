@@ -7,6 +7,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\TimeSlotController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AvailableSlotController;
 
 use App\Http\Controllers\UserController;
 
@@ -39,7 +40,7 @@ Route::delete('/doctors/{id}', [DoctorController::class, 'destroy']);
         Route::get('/time-slots/{doctorId}', [TimeSlotController::class, 'getByDoctor']);
         
 
-
+        Route::post('/available-slots', [AvailableSlotController::class, 'getAvailableSlots']);
         // Appointment Management (admin can view all, update, delete)
         Route::get('/appointments', [AppointmentController::class, 'index']);
         Route::post('/appointments/update/{id}', [AppointmentController::class, 'update']);
