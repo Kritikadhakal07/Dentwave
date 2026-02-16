@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
-    /**
-     * Display a listing of appointments.
-     */
     public function index()
     {
         $appointments = DB::select("
@@ -25,7 +22,6 @@ class AppointmentController extends Controller
             ORDER BY a.appointment_date DESC, a.appointment_time DESC
         ");
 
-        // Get services for each appointment
         foreach ($appointments as $appointment) {
             $services = DB::select("
                 SELECT s.id, s.name, s.cost, s.duration
@@ -39,9 +35,6 @@ class AppointmentController extends Controller
         return response()->json($appointments);
     }
 
-    /**
-     * Get appointments by user ID.
-     */
     public function getByUser($userId)
     {
         $appointments = DB::select("
@@ -67,9 +60,6 @@ class AppointmentController extends Controller
         return response()->json($appointments);
     }
 
-    /**
-     * Store a newly created appointment.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -84,19 +74,31 @@ class AppointmentController extends Controller
             'service_ids.*' => 'exists:services,id',
         ]);
 
-        // Check if time slot is available
-        $timeSlotCheck = DB::select("
-            SELECT * FROM time_slots 
-            WHERE doctor_id = ? 
-            AND start_time = ? 
-            AND status = 'Available'
-        ", [$validated['doctor_id'], $validated['appointment_time']]);
+        // Check for time slot conflicts (with 5-minute buffer)
+        $bufferTime = 5;
+        $requiredDuration = $validated['total_duration'] + $bufferTime;
+        
+        $appointmentStart = $this->timeToMinutes($validated['appointment_time']);
+        $appointmentEnd = $appointmentStart + $requiredDuration;
 
-        if (empty($timeSlotCheck)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected time slot is not available'
-            ], 422);
+        $conflicts = DB::select("
+            SELECT * FROM appointments 
+            WHERE doctor_id = ? 
+            AND appointment_date = ? 
+            AND status != 'Cancelled'
+        ", [$validated['doctor_id'], $validated['appointment_date']]);
+
+        foreach ($conflicts as $existing) {
+            $existingStart = $this->timeToMinutes($existing->appointment_time);
+            $existingEnd = $existingStart + (int)$existing->total_duration + $bufferTime;
+
+            // Check if times overlap
+            if ($appointmentStart < $existingEnd && $appointmentEnd > $existingStart) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This time slot conflicts with an existing appointment'
+                ], 422);
+            }
         }
 
         // Insert appointment
@@ -114,7 +116,6 @@ class AppointmentController extends Controller
             ]
         );
 
-        // Get the newly created appointment
         $appointment = DB::select("SELECT * FROM appointments ORDER BY id DESC LIMIT 1");
         $appointmentId = $appointment[0]->id;
 
@@ -127,15 +128,6 @@ class AppointmentController extends Controller
             );
         }
 
-        // Mark time slot as booked
-        DB::update(
-            "UPDATE time_slots 
-             SET status = 'Booked' 
-             WHERE doctor_id = ? 
-             AND start_time = ?",
-            [$validated['doctor_id'], $validated['appointment_time']]
-        );
-
         return response()->json([
             'success' => true,
             'message' => 'Appointment created successfully',
@@ -143,9 +135,6 @@ class AppointmentController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified appointment.
-     */
     public function show($id)
     {
         $appointment = DB::select("
@@ -177,9 +166,6 @@ class AppointmentController extends Controller
         return response()->json($appointment[0]);
     }
 
-    /**
-     * Update the specified appointment status.
-     */
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -191,23 +177,10 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'Appointment not found'], 404);
         }
 
-        $oldStatus = $existing[0]->status;
-
         DB::update(
             "UPDATE appointments SET status = ?, updated_at = NOW() WHERE id = ?",
             [$validated['status'], $id]
         );
-
-        // If cancelled, free up the time slot
-        if ($validated['status'] === 'Cancelled') {
-            DB::update(
-                "UPDATE time_slots 
-                 SET status = 'Available' 
-                 WHERE doctor_id = ? 
-                 AND start_time = ?",
-                [$existing[0]->doctor_id, $existing[0]->appointment_time]
-            );
-        }
 
         $appointment = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
 
@@ -218,9 +191,6 @@ class AppointmentController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified appointment.
-     */
     public function destroy($id)
     {
         $appointment = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
@@ -228,26 +198,18 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'Appointment not found'], 404);
         }
 
-        $appointment = $appointment[0];
-
-        // Free up the time slot
-        DB::update(
-            "UPDATE time_slots 
-             SET status = 'Available' 
-             WHERE doctor_id = ? 
-             AND start_time = ?",
-            [$appointment->doctor_id, $appointment->appointment_time]
-        );
-
-        // Delete appointment services first (foreign key constraint)
         DB::delete("DELETE FROM appointment_services WHERE appointment_id = ?", [$id]);
-        
-        // Delete appointment
         DB::delete("DELETE FROM appointments WHERE id = ?", [$id]);
 
         return response()->json([
             'success' => true,
             'message' => 'Appointment deleted successfully'
         ]);
+    }
+
+    private function timeToMinutes($time)
+    {
+        list($hours, $minutes) = explode(':', $time);
+        return (int)$hours * 60 + (int)$minutes;
     }
 }

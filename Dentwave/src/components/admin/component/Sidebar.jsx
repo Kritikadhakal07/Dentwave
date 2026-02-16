@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import LogoutButton from '../../LogoutButton';
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Users,
@@ -35,11 +36,14 @@ function Sidebar() {
       }}
     >
       {/* Logo */}
-      <div className="p-3 border-bottom">
-        <h4 className="text-primary m-0" style={{ fontFamily: 'cursive' }}>
-          ✱ logo
-        </h4>
-      </div>
+      <Link to="/" className="navbar-brand">
+          <img 
+            className="logo" 
+            src="logo.jpg" 
+            alt="Logo"
+            style={{ height: '50px' }}
+          />
+        </Link>
 
       {/* Menu */}
       <nav className="py-3">
