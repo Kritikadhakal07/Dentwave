@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Clock, DollarSign, Calendar, CreditCard, Check, AlertCircle } from 'lucide-react';
 
 const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) => {
@@ -9,32 +8,31 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
   const [selectedDoctor, setSelectedDoctor] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [doctors, setDoctors] = useState([]);
-  const [timeSlots, setTimeSlots] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const totalCost = selectedServices.reduce((sum, service) => sum + parseFloat(service.cost || 0), 0);
   const totalDuration = selectedServices.reduce((sum, service) => sum + parseInt(service.duration || 0), 0);
 
-  // Fetch doctors on component mount
   useEffect(() => {
     fetchDoctors();
   }, []);
 
-  // Fetch time slots when doctor AND date are selected
   useEffect(() => {
-    if (selectedDoctor && selectedDate) {
-      fetchAvailableTimeSlots(selectedDoctor, selectedDate);
+    if (selectedDoctor && selectedDate && selectedServices.length > 0) {
+      fetchAvailableSlots();
     } else {
-      setTimeSlots([]);
+      setAvailableSlots([]);
       setSelectedTime('');
     }
   }, [selectedDoctor, selectedDate]);
 
   const fetchDoctors = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/doctors");
-      const activeDoctors = res.data.filter(d => d.status === 'Active');
+      const res = await fetch("http://127.0.0.1:8000/api/doctors");
+      const data = await res.json();
+      const activeDoctors = data.filter(d => d.status === 'Active');
       setDoctors(activeDoctors);
       
       if (activeDoctors.length === 0) {
@@ -46,53 +44,53 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     }
   };
 
-  /**
-   * Get day of week from selected date
-   * Returns: Monday, Tuesday, etc.
-   */
+  const fetchAvailableSlots = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await fetch("http://127.0.0.1:8000/api/available-slots", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          doctor_id: parseInt(selectedDoctor),
+          date: selectedDate,
+          service_ids: selectedServices.map(s => parseInt(s.id))
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailableSlots(data.available_slots);
+        
+        if (data.available_slots.length === 0) {
+          setError(`No available slots for ${data.day}. Total appointment time needed: ${data.total_duration + 5} minutes (including 5-min buffer).`);
+        }
+      } else {
+        setError(data.message || 'Failed to fetch available slots');
+        setAvailableSlots([]);
+      }
+    } catch (err) {
+      console.error("Error fetching slots:", err);
+      setError('Failed to load time slots. Please try again.');
+      setAvailableSlots([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getDayOfWeek = (dateString) => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const date = new Date(dateString);
     return days[date.getDay()];
   };
 
-  /**
-   * Fetch available time slots based on doctor and selected date
-   * Filters by:
-   * 1. Day of week (from recurring schedule)
-   * 2. Not already booked for this specific date
-   */
-  const fetchAvailableTimeSlots = async (doctorId, selectedDate) => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Get day of week from selected date
-      const dayOfWeek = getDayOfWeek(selectedDate);
-      console.log(`Selected date: ${selectedDate}, Day: ${dayOfWeek}`);
-      
-      // Fetch all time slots for this doctor
-      const res = await axios.get(`http://127.0.0.1:8000/api/time-slots/${doctorId}`);
-      
-      // Filter slots by day of week and availability
-      const filteredSlots = res.data.filter(slot => {
-        return slot.day === dayOfWeek && slot.status === 'Available';
-      });
-      
-      console.log(`Found ${filteredSlots.length} available slots for ${dayOfWeek}`);
-      
-      setTimeSlots(filteredSlots);
-      
-      if (filteredSlots.length === 0) {
-        setError(`No available time slots for ${dayOfWeek}. Please try another date.`);
-      }
-    } catch (err) {
-      console.error("Error fetching time slots:", err);
-      setError('Failed to load time slots. Please try again.');
-      setTimeSlots([]);
-    } finally {
-      setLoading(false);
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const dayOfWeek = getDayOfWeek(dateString);
+    return `${dayOfWeek}, ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
   };
 
   const validateStep2 = () => {
@@ -135,61 +133,67 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     }
   };
 
-  const handleConfirmAppointment = async () => {
-    setError('');
-    
-    if (!validateStep3()) {
-      return;
+  
+const handleConfirmAppointment = async () => {
+  setError('');
+
+  if (!validateStep3()) return;
+
+  setLoading(true);
+
+  try {
+    const userId = localStorage.getItem('user_id') || 1;
+
+    const payload = {
+      user_id: parseInt(userId),
+      doctor_id: parseInt(selectedDoctor),
+      appointment_date: selectedDate,
+      appointment_time: selectedTime,
+      total_cost: parseFloat(totalCost.toFixed(2)),
+      total_duration: parseInt(totalDuration),
+      payment_method: paymentMethod,
+      service_ids: selectedServices.map(s => parseInt(s.id)),
+    };
+
+    const response = await fetch("http://127.0.0.1:8000/api/appointments", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+   
+console.log("hellp")
+
+    const data = await response.json();
+    console.log("Full response:", data);
+console.log("Appointment ID:", data.appointment_id);
+
+
+    if (!response.ok) throw new Error(data.message || 'Failed to create appointment');
+
+    // Redirect to eSewa if selected
+if (paymentMethod === 'esewa') {
+    if (!data.appointment || !data.appointment.id) {
+        alert("Appointment ID missing");
+        return;
     }
 
-    setLoading(true);
-    
-    try {
-      // Get user ID from localStorage or use default
-      const userId = localStorage.getItem('user_id') || 1;
+    // Redirect to backend route for payment
+    window.location.href = `http://127.0.0.1:8000/payment/${data.appointment.id}`;
+    return;
+}
 
-      const payload = {
-        user_id: parseInt(userId),
-        doctor_id: parseInt(selectedDoctor),
-        appointment_date: selectedDate,
-        appointment_time: selectedTime,
-        total_cost: parseFloat(totalCost.toFixed(2)),
-        total_duration: parseInt(totalDuration),
-        payment_method: paymentMethod,
-        service_ids: selectedServices.map(s => parseInt(s.id))
-      };
 
-      console.log('📅 Submitting appointment:', payload);
+    alert(' Appointment confirmed successfully!');
+    onConfirm();
 
-      const response = await axios.post("http://127.0.0.1:8000/api/appointments", payload);
-      
-      console.log('✅ Appointment created:', response.data);
-
-      alert('🎉 Appointment confirmed successfully!');
-      onConfirm();
-      
-    } catch (err) {
-      console.error("❌ Error creating appointment:", err);
-      console.error("Error response:", err.response?.data);
-      
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.errors || 
-                          err.message || 
-                          'Failed to create appointment';
-      
-      setError(errorMessage);
-      alert("❌ Failed to create appointment: " + errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const dayOfWeek = getDayOfWeek(dateString);
-    return `${dayOfWeek}, ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-  };
+  } catch (err) {
+    console.error(" Error creating appointment:", err);
+    setError(err.message || 'Failed to create appointment');
+    alert(" Failed to create appointment: " + err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '50px 0' }}>
@@ -202,7 +206,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
           <div className="card-body p-5">
             <h1 className="display-5 fw-bold text-center mb-5">Book Your Appointment</h1>
 
-            {/* Error Alert */}
             {error && (
               <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
                 <AlertCircle size={20} className="me-2" />
@@ -312,7 +315,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                     <span className="fw-semibold">Total Estimated Duration:</span>
                     <span className="d-flex align-items-center gap-1">
                       <Clock size={18} />
-                      {totalDuration} minutes
+                      {totalDuration} min (+5 min buffer)
                     </span>
                   </div>
                 </div>
@@ -321,7 +324,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                   onClick={onBack}
                   className="btn btn-link text-primary text-decoration-none p-0 mt-4"
                 >
-                  Edit Services
+                  Add more Services
                 </button>
               </div>
             )}
@@ -385,18 +388,18 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                   </div>
                 )}
 
-                {!loading && selectedDoctor && selectedDate && timeSlots.length > 0 && (
+                {!loading && selectedDoctor && selectedDate && availableSlots.length > 0 && (
                   <div className="mb-4">
                     <label className="form-label fw-semibold">
                       <Clock size={18} className="me-2" />
                       Available Time Slots *
                     </label>
                     <p className="small text-muted mb-3">
-                      Showing available slots for {getDayOfWeek(selectedDate)}
+                      ✨ Smart slots calculated based on doctor availability and existing appointments
                     </p>
                     <div className="row g-3">
-                      {timeSlots.map((slot) => (
-                        <div key={slot.id} className="col-4">
+                      {availableSlots.map((slot, index) => (
+                        <div key={index} className="col-md-6">
                           <button
                             type="button"
                             onClick={() => {
@@ -408,8 +411,12 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                                 ? 'btn-primary' 
                                 : 'btn-outline-secondary'
                             }`}
+                            style={{ padding: '12px' }}
                           >
-                            {slot.start_time}
+                            <div className="d-flex align-items-center justify-content-center gap-2">
+                              <Clock size={16} />
+                              <span>{slot.start_time} - {slot.end_time}</span>
+                            </div>
                           </button>
                         </div>
                       ))}
@@ -417,13 +424,12 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                   </div>
                 )}
 
-                {!loading && selectedDoctor && selectedDate && timeSlots.length === 0 && (
+                {!loading && selectedDoctor && selectedDate && availableSlots.length === 0 && (
                   <div className="alert alert-warning d-flex align-items-start">
                     <AlertCircle size={20} className="me-2 mt-1" />
                     <div>
                       <strong>No available time slots</strong>
                       <p className="mb-0 small">
-                        The doctor doesn't have availability on {getDayOfWeek(selectedDate)}s. 
                         Please try a different date or another doctor.
                       </p>
                     </div>
@@ -440,103 +446,90 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
             )}
 
             {/* Step 3: Payment */}
-            {step === 3 && (
-              <div>
-                <h2 className="h4 fw-bold mb-4">Payment Method</h2>
+           {step === 3 && (
+  <div>
+    <h2 className="h4 fw-bold mb-4">Payment Method</h2>
 
-                <div className="mb-4">
-                  <div 
-                    onClick={() => {
-                      setPaymentMethod('card');
-                      setError('');
-                    }}
-                    className={`p-4 mb-3 border rounded ${paymentMethod === 'card' ? 'border-primary bg-light' : ''}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <CreditCard size={24} className="text-primary" />
-                      <div>
-                        <div className="fw-semibold">Credit/Debit Card</div>
-                        <div className="small text-muted">Pay securely with your card</div>
-                      </div>
-                      {paymentMethod === 'card' && <Check size={20} className="text-primary ms-auto" />}
-                    </div>
-                  </div>
+    <div className="mb-4">
+      {/* eSewa Option */}
+      <div 
+        onClick={() => {
+          setPaymentMethod('esewa');
+          setError('');
+        }}
+        className={`p-4 mb-3 border rounded ${paymentMethod === 'esewa' ? 'border-primary bg-light' : ''}`}
+        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <img src="esewa.png" alt="eSewa" style={{ height: 24 }} />
+          <div>
+            <div className="fw-semibold">eSewa</div>
+            <div className="small text-muted">Pay securely using eSewa</div>
+          </div>
+          {paymentMethod === 'esewa' && <Check size={20} className="text-primary ms-auto" />}
+        </div>
+      </div>
 
-                  <div 
-                    onClick={() => {
-                      setPaymentMethod('cash');
-                      setError('');
-                    }}
-                    className={`p-4 mb-3 border rounded ${paymentMethod === 'cash' ? 'border-primary bg-light' : ''}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <DollarSign size={24} className="text-success" />
-                      <div>
-                        <div className="fw-semibold">Pay at Clinic</div>
-                        <div className="small text-muted">Pay when you arrive</div>
-                      </div>
-                      {paymentMethod === 'cash' && <Check size={20} className="text-primary ms-auto" />}
-                    </div>
-                  </div>
+      {/* Khalti Option (UI Only for Now) */}
+      <div 
+        onClick={() => {
+          setPaymentMethod('khalti');
+          setError('');
+        }}
+        className={`p-4 mb-3 border rounded ${paymentMethod === 'khalti' ? 'border-primary bg-light' : ''}`}
+        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <img src="khalti.png" alt="Khalti" style={{ height: 24 }} />
+          <div>
+            <div className="fw-semibold">Khalti</div>
+            <div className="small text-muted">Pay using Khalti (coming soon)</div>
+          </div>
+          {paymentMethod === 'khalti' && <Check size={20} className="text-primary ms-auto" />}
+        </div>
+      </div>
+    </div>
 
-                  <div 
-                    onClick={() => {
-                      setPaymentMethod('insurance');
-                      setError('');
-                    }}
-                    className={`p-4 mb-3 border rounded ${paymentMethod === 'insurance' ? 'border-primary bg-light' : ''}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <Check size={24} className="text-info" />
-                      <div>
-                        <div className="fw-semibold">Insurance</div>
-                        <div className="small text-muted">Use your insurance coverage</div>
-                      </div>
-                      {paymentMethod === 'insurance' && <Check size={20} className="text-primary ms-auto" />}
-                    </div>
-                  </div>
-                </div>
+    {/* Booking Summary */}
+    <div className="bg-light p-4 rounded border">
+      <h5 className="fw-semibold mb-3">📋 Booking Summary</h5>
+      <div className="small">
+        <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
+          <span className="text-muted">Services:</span>
+          <span className="fw-semibold">{selectedServices.length} service(s)</span>
+        </div>
+        <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
+          <span className="text-muted">Doctor:</span>
+          <span className="fw-semibold">
+            {doctors.find(d => d.id == selectedDoctor)?.name || 'Not selected'}
+          </span>
+        </div>
+        <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
+          <span className="text-muted">Date:</span>
+          <span className="fw-semibold">{formatDate(selectedDate)}</span>
+        </div>
+        <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
+          <span className="text-muted">Time:</span>
+          <span className="fw-semibold">
+            {selectedTime ? `${selectedTime} (${totalDuration} min)` : 'Not selected'}
+          </span>
+        </div>
+        <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
+          <span className="text-muted">Payment:</span>
+          <span className="fw-semibold text-capitalize">{paymentMethod || 'Not selected'}</span>
+        </div>
+        <div className="d-flex justify-content-between pt-2">
+          <span className="fw-bold fs-5">Total Cost:</span>
+          <span className="text-primary fw-bold fs-4">$ {totalCost.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
 
-                <div className="bg-light p-4 rounded border">
-                  <h5 className="fw-semibold mb-3">📋 Booking Summary</h5>
-                  <div className="small">
-                    <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                      <span className="text-muted">Services:</span>
-                      <span className="fw-semibold">{selectedServices.length} service(s)</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                      <span className="text-muted">Doctor:</span>
-                      <span className="fw-semibold">
-                        {doctors.find(d => d.id == selectedDoctor)?.name || 'Not selected'}
-                      </span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                      <span className="text-muted">Date:</span>
-                      <span className="fw-semibold">{formatDate(selectedDate)}</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                      <span className="text-muted">Time:</span>
-                      <span className="fw-semibold">{selectedTime || 'Not selected'}</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                      <span className="text-muted">Duration:</span>
-                      <span className="fw-semibold">{totalDuration} minutes</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-3 pb-2 border-bottom">
-                      <span className="text-muted">Payment:</span>
-                      <span className="fw-semibold text-capitalize">{paymentMethod || 'Not selected'}</span>
-                    </div>
-                    <div className="d-flex justify-content-between pt-2">
-                      <span className="fw-bold fs-5">Total Cost:</span>
-                      <span className="text-primary fw-bold fs-4">$ {totalCost.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+    {/* Pay Button */}
+   
+  </div>
+)}
+
 
             {/* Navigation Buttons */}
             <div className="d-flex gap-3 mt-5">

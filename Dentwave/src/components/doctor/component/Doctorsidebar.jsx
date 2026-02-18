@@ -1,7 +1,7 @@
 import React from "react";
 import { Nav, Button } from "react-bootstrap";
 /* Subtle hover / active like the screenshot */
-
+import LogoutButton from '../../LogoutButton';
 
 
 const Doctorsidebar = () => {
@@ -57,6 +57,8 @@ const Doctorsidebar = () => {
           Logout
         </Button>
       </div>
+
+      <LogoutButton />
     </aside>
   );
 };
