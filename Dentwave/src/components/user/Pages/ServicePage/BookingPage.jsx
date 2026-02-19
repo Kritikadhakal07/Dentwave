@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, DollarSign, Calendar, CreditCard, Check, AlertCircle } from 'lucide-react';
 
+
+
 const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) => {
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState('');
@@ -178,7 +180,7 @@ if (paymentMethod === 'esewa') {
     }
 
     // Redirect to backend route for payment
-    window.location.href = `http://127.0.0.1:8000/payment/${data.appointment.id}`;
+   window.location.href = `https://unaidedly-propublication-marcelo.ngrok-free.dev/payment/${data.appointment.id}`;
     return;
 }
 
@@ -374,7 +376,7 @@ if (paymentMethod === 'esewa') {
                   />
                   {selectedDate && (
                     <small className="text-muted mt-1 d-block">
-                      📅 {formatDate(selectedDate)}
+                      {formatDate(selectedDate)}
                     </small>
                   )}
                 </div>

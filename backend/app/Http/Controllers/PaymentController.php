@@ -8,87 +8,91 @@ use Illuminate\Support\Facades\DB;
 class PaymentController extends Controller
 {
     // Sandbox URL and merchant code
- private $esewa_sandbox_url = "https://esewatest.com.np/epay/main";
+
+ private $esewa_sandbox_url = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+
+
+
 
 
     private $merchant_code = "EPAYTEST"; 
 
     // Step 1: Redirect user to eSewa
-    public function redirectToEsewa($appointmentId)
-    {
-        $appointment = DB::select("SELECT * FROM appointments WHERE id = ?", [$appointmentId]);
+   public function redirectToEsewa($appointmentId)
+{
+    $appointment = DB::select("SELECT * FROM appointments WHERE id = ?", [$appointmentId]);
 
-        if (empty($appointment)) {
-            return redirect()->back()->with('error', 'Appointment not found');
-        }
-
-        $appointment = $appointment[0];
-
-        // Save initial payment record
-        DB::insert("INSERT INTO payments (appointment_id, amount, payment_gateway, payment_status, created_at, updated_at)
-                    VALUES (?, ?, 'esewa', 'Pending', NOW(), NOW())",
-                    [$appointment->id, $appointment->total_cost]);
-
-        $payment = DB::select("SELECT * FROM payments WHERE appointment_id = ? ORDER BY id DESC LIMIT 1", [$appointment->id])[0];
-
-        // eSewa parameters
-        $params = [
-            'amt' => $appointment->total_cost,
-            'pdc' => 0,
-            'psc' => 0,
-            'txAmt' => 0,
-            'tAmt' => $appointment->total_cost,
-            'pid' => $payment->id,
-            'scd' => $this->merchant_code,
-            'su' => route('payment.success'),
-            'fu' => route('payment.failure')
-        ];
-
-        $query = http_build_query($params);
-
-        return redirect($this->esewa_sandbox_url . '?' . $query);
+    if (empty($appointment)) {
+        return redirect()->back()->with('error', 'Appointment not found');
     }
+
+    $appointment = $appointment[0];
+
+    $paymentId = uniqid();
+
+    DB::insert("INSERT INTO payments (appointment_id, transaction_id, amount, payment_gateway, payment_status, created_at, updated_at)
+                VALUES (?, ?, ?, 'esewa', 'Pending', NOW(), NOW())",
+                [$appointment->id, $paymentId, $appointment->total_cost]);
+
+    $secretKey = "YOUR_SECRET_KEY"; // from eSewa merchant dashboard
+
+    $message = "total_amount={$appointment->total_cost},transaction_uuid={$paymentId},product_code=EPAYTEST";
+
+    $signature = base64_encode(hash_hmac('sha256', $message, $secretKey, true));
+
+    $params = [
+        'amount' => $appointment->total_cost,
+        'tax_amount' => 0,
+        'total_amount' => $appointment->total_cost,
+        'transaction_uuid' => $paymentId,
+        'product_code' => 'EPAYTEST',
+        'product_service_charge' => 0,
+        'product_delivery_charge' => 0,
+        'success_url' => "https://unaidedly-propublication-marcelo.ngrok-free.dev/payment-success",
+        'failure_url' => "https://unaidedly-propublication-marcelo.ngrok-free.dev/payment-failure",
+        'signed_field_names' => 'total_amount,transaction_uuid,product_code',
+        'signature' => $signature
+    ];
+
+    return view('esewa.redirect', compact('params'));
+}
+
 
     // Step 2: Success callback
-    public function success(Request $request)
-    {
-        $pid = $request->input('pid'); // Payment ID in our DB
-        $amt = $request->input('amt');
-        $tAmt = $request->input('tAmt');
+   public function success(Request $request)
+{
+    $pid = $request->pid;
+    $amt = $request->amt;
+    $refId = $request->refId;
 
-        // Validate with eSewa verification endpoint
-        $data = [
-    'amt' => $amt,
-    'pdc' => 0,
-    'psc' => 0,
-    'txAmt' => 0,
-    'tAmt' => $tAmt,
-    'pid' => $pid,
-    'scd' => $this->merchant_code
-];
+    $url = "https://uat.esewa.com.np/epay/transrec";
 
+    $data = [
+        'amt' => $amt,
+        'scd' => 'EPAYTEST',
+        'pid' => $pid,
+        'rid' => $refId
+    ];
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://esewatest.com.np/epay/transrec");
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($ch);
-        curl_close($ch);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        if (strpos($response, "Success") !== false) {
-            // Update payment status
-            DB::update("UPDATE payments SET payment_status = 'Completed', updated_at = NOW() WHERE id = ?", [$pid]);
+    $response = curl_exec($ch);
+    curl_close($ch);
 
-            // Update appointment status
-            $payment = DB::select("SELECT * FROM payments WHERE id = ?", [$pid])[0];
-            DB::update("UPDATE appointments SET status = 'Confirmed', updated_at = NOW() WHERE id = ?", [$payment->appointment_id]);
+    if (strpos($response, "Success") !== false) {
 
-            return redirect(env('FRONTEND_URL') . "/payment-success?appointment_id=" . $payment->appointment_id);
-        }
+        DB::update("UPDATE payments SET payment_status = 'Completed', updated_at = NOW() WHERE id = ?", [$pid]);
 
-        return redirect(env('FRONTEND_URL') . "/payment-failure");
+        return redirect("http://localhost:5173/payment-success");
     }
+
+    return redirect("http://localhost:5173/payment-failure");
+}
+
 
     // Step 3: Failure callback
     public function failure()
