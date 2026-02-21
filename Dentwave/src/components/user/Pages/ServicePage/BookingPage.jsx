@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, DollarSign, Calendar, CreditCard, Check, AlertCircle } from 'lucide-react';
 
-
-
 const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) => {
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState('');
@@ -134,11 +132,9 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
       }
     }
   };
-
-  
+// React: FULL handleConfirmAppointment (drop-in replacement)
 const handleConfirmAppointment = async () => {
   setError('');
-
   if (!validateStep3()) return;
 
   setLoading(true);
@@ -154,44 +150,46 @@ const handleConfirmAppointment = async () => {
       total_cost: parseFloat(totalCost.toFixed(2)),
       total_duration: parseInt(totalDuration),
       payment_method: paymentMethod,
-      service_ids: selectedServices.map(s => parseInt(s.id)),
+      service_ids: selectedServices.map(s => parseInt(s.id))
     };
 
     const response = await fetch("http://127.0.0.1:8000/api/appointments", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
-   
-console.log("hellp")
 
     const data = await response.json();
-    console.log("Full response:", data);
-console.log("Appointment ID:", data.appointment_id);
+    console.log("Appointments API response:", data);
 
-
-    if (!response.ok) throw new Error(data.message || 'Failed to create appointment');
-
-    // Redirect to eSewa if selected
-if (paymentMethod === 'esewa') {
-    if (!data.appointment || !data.appointment.id) {
-        alert("Appointment ID missing");
-        return;
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create appointment');
     }
 
-    // Redirect to backend route for payment
-   window.location.href = `https://unaidedly-propublication-marcelo.ngrok-free.dev/payment/${data.appointment.id}`;
-    return;
-}
+    const appointmentId =
+      data.appointmentId ??
+      data.appointment?.id ??
+      data.id;
 
+    if (!appointmentId) {
+      throw new Error("Appointment id missing in API response");
+    }
 
-    alert(' Appointment confirmed successfully!');
-    onConfirm();
+    if (paymentMethod === 'khalti') {
+      window.location.href = `http://127.0.0.1:8000/khalti/initiate/${appointmentId}`;
+      return;
+    }
+
+    if (paymentMethod === 'cash') {
+      alert('Appointment confirmed successfully! Please pay in cash at the clinic.');
+      onConfirm();
+      return;
+    }
 
   } catch (err) {
-    console.error(" Error creating appointment:", err);
+    console.error("Error creating appointment:", err);
     setError(err.message || 'Failed to create appointment');
-    alert(" Failed to create appointment: " + err.message);
+    alert("Failed: " + (err.message || 'Unknown error'));
   } finally {
     setLoading(false);
   }
@@ -376,7 +374,7 @@ if (paymentMethod === 'esewa') {
                   />
                   {selectedDate && (
                     <small className="text-muted mt-1 d-block">
-                      {formatDate(selectedDate)}
+                      📅 {formatDate(selectedDate)}
                     </small>
                   )}
                 </div>
@@ -448,44 +446,39 @@ if (paymentMethod === 'esewa') {
             )}
 
             {/* Step 3: Payment */}
-           {step === 3 && (
+           {/* Step 3: Payment */}
+{step === 3 && (
   <div>
     <h2 className="h4 fw-bold mb-4">Payment Method</h2>
 
     <div className="mb-4">
-      {/* eSewa Option */}
+      {/* eSewa */}
       <div 
-        onClick={() => {
-          setPaymentMethod('esewa');
-          setError('');
-        }}
+        onClick={() => { setPaymentMethod('esewa'); setError(''); }}
         className={`p-4 mb-3 border rounded ${paymentMethod === 'esewa' ? 'border-primary bg-light' : ''}`}
         style={{ cursor: 'pointer', transition: 'all 0.2s' }}
       >
         <div className="d-flex align-items-center gap-3">
-          <img src="esewa.png" alt="eSewa" style={{ height: 24 }} />
+          <img src="/logos/esewa.png" alt="eSewa" style={{ width: 24, height: 24 }} />
           <div>
             <div className="fw-semibold">eSewa</div>
-            <div className="small text-muted">Pay securely using eSewa</div>
+            <div className="small text-muted">Pay via eSewa</div>
           </div>
           {paymentMethod === 'esewa' && <Check size={20} className="text-primary ms-auto" />}
         </div>
       </div>
 
-      {/* Khalti Option (UI Only for Now) */}
+      {/* Khalti */}
       <div 
-        onClick={() => {
-          setPaymentMethod('khalti');
-          setError('');
-        }}
+        onClick={() => { setPaymentMethod('khalti'); setError(''); }}
         className={`p-4 mb-3 border rounded ${paymentMethod === 'khalti' ? 'border-primary bg-light' : ''}`}
         style={{ cursor: 'pointer', transition: 'all 0.2s' }}
       >
         <div className="d-flex align-items-center gap-3">
-          <img src="khalti.png" alt="Khalti" style={{ height: 24 }} />
+          <img src="/logos/khalti.png" alt="Khalti" style={{ width: 24, height: 24 }} />
           <div>
             <div className="fw-semibold">Khalti</div>
-            <div className="small text-muted">Pay using Khalti (coming soon)</div>
+            <div className="small text-muted">Pay via Khalti</div>
           </div>
           {paymentMethod === 'khalti' && <Check size={20} className="text-primary ms-auto" />}
         </div>
@@ -526,12 +519,8 @@ if (paymentMethod === 'esewa') {
         </div>
       </div>
     </div>
-
-    {/* Pay Button */}
-   
   </div>
 )}
-
 
             {/* Navigation Buttons */}
             <div className="d-flex gap-3 mt-5">
@@ -547,7 +536,7 @@ if (paymentMethod === 'esewa') {
                   ← Back
                 </button>
               )}
-              <button 
+              <button  type="button"
                 onClick={step === 3 ? handleConfirmAppointment : handleContinue}
                 disabled={loading || (step === 1 && selectedServices.length === 0)}
                 className="btn btn-primary flex-fill py-3"
