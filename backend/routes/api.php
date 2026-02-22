@@ -42,6 +42,8 @@ Route::get('/time-slots/{doctorId}', [TimeSlotController::class, 'getByDoctor'])
         Route::post('/available-slots', [AvailableSlotController::class, 'getAvailableSlots']);
         // Appointment Management (admin can view all, update, delete)
         Route::get('/appointments', [AppointmentController::class, 'index']);
+
+Route::post('/appointments', [AppointmentController::class, 'store']);
         Route::post('/appointments/update/{id}', [AppointmentController::class, 'update']);
         Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
 

@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { useEffect } from "react";
 
 
 
@@ -31,6 +32,23 @@ import AdminLayout from "./components/layouts/AdminLayout";
 import DoctorLayout from "./components/layouts/DoctorLayout";
 
 function App() {
+
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+
+    if (payment === 'success') {
+      const appointmentId = params.get('appointment_id');
+      alert(`✅ Payment Successful! Appointment #${appointmentId} confirmed.`);
+      window.history.replaceState({}, '', '/');
+    }
+
+    if (payment === 'failed') {
+      alert('❌ Payment failed. Please try again.');
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
   return (
     <AuthProvider>
       <Routes>
