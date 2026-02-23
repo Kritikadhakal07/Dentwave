@@ -21,28 +21,40 @@ class KhaltiController extends Controller
 
         if (!$appointment) {
             Log::error('Appointment not found in initiate', ['appointment_id' => $appointment_id]);
-            return redirect($this->frontendUrl . '/?payment/failed?reason=appointment_not_found');
+            // BUG FIX: was '/?payment/failed?...' — malformed URL, fixed to '/payment/failed?...'
+            return redirect($this->frontendUrl . '/payment/failed?reason=appointment_not_found');
         }
 
         if ($appointment->status === 'Confirmed') {
-            return redirect($this->frontendUrl . '/?payment/failed?reason=already_paid');
+            return redirect($this->frontendUrl . '/payment/failed?reason=already_paid');
         }
 
-        $payment = Payment::create([
-            'appointment_id' => $appointment->id,
-            'amount'         => $appointment->total_cost,
-            'gateway'        => 'Khalti',
-            'status'         => 'Pending'
-        ]);
+        // Prevent duplicate pending payments for same appointment
+        $existingPending = Payment::where('appointment_id', $appointment->id)
+            ->where('status', 'Pending')
+            ->first();
+
+        if ($existingPending) {
+            // Reuse existing pending payment instead of creating a duplicate
+            $payment = $existingPending;
+        } else {
+            $payment = Payment::create([
+                'appointment_id' => $appointment->id,
+                'amount'         => $appointment->total_cost,
+                'gateway'        => 'Khalti',
+                'status'         => 'Pending',
+            ]);
+        }
 
         $response = Http::withHeaders([
             'Authorization' => 'Key ' . config('services.khalti.secret_key'),
-        ])->post(config('services.khalti.base_url') . '/epayment/initiate/', [
+        ])->withoutVerifying()
+        ->post(config('services.khalti.base_url') . 'epayment/initiate/', [
             "return_url"           => route('khalti.verify'),
             "website_url"          => $this->frontendUrl,
-            "amount"               => (int) round($payment->amount * 100),
+            "amount"               => (int) round($payment->amount * 100), // paisa
             "purchase_order_id"    => (string) $payment->id,
-            "purchase_order_name"  => "Dental Appointment Payment",
+            "purchase_order_name"  => "Dental Appointment #" . $appointment->id,
         ]);
 
         if (!$response->successful()) {
@@ -51,7 +63,7 @@ class KhaltiController extends Controller
                 'body'   => $response->body(),
             ]);
             $payment->update(['status' => 'Failed']);
-            return redirect($this->frontendUrl . '/?payment/failed?reason=initiate_failed');
+            return redirect($this->frontendUrl . '/payment/failed?reason=initiate_failed');
         }
 
         $data = $response->json();
@@ -60,20 +72,13 @@ class KhaltiController extends Controller
         if (!isset($data['pidx']) || !isset($data['payment_url'])) {
             Log::error('Khalti initiate missing keys', $data);
             $payment->update(['status' => 'Failed']);
-            return redirect($this->frontendUrl . '/?payment/failed?reason=invalid_response');
+            return redirect($this->frontendUrl . '/payment/failed?reason=invalid_response');
         }
 
         $payment->update(['pidx' => $data['pidx']]);
 
-        // Send user to Khalti payment page
+        // BUG FIX: Removed dead `dd([...])` block that was unreachable after this redirect
         return redirect()->away($data['payment_url']);
-
-   dd([
-    'secret_key'  => config('services.khalti.secret_key'),
-    'base_url'    => config('services.khalti.base_url'),
-    'http_status' => $response->status(),
-    'response'    => $response->json(),
-]);
     }
 
     public function verify(Request $request)
@@ -82,22 +87,26 @@ class KhaltiController extends Controller
             'pidx' => 'required|string',
         ]);
 
+        Log::info('Khalti verify called', $request->only(['pidx', 'status', 'transaction_id']));
+
         $payment = Payment::where('pidx', $request->pidx)->first();
 
         if (!$payment) {
-            return redirect($this->frontendUrl . '/?payment/failed?reason=payment_not_found');
+            return redirect($this->frontendUrl . '/payment/failed?reason=payment_not_found');
         }
 
-        // Early exit if Khalti already tells us it failed
+        // Early exit if Khalti already tells us it failed/was cancelled
         if ($request->status && $request->status !== 'Completed') {
             $payment->update(['status' => 'Failed']);
-            return redirect($this->frontendUrl . '/?payment/failed?reason=payment_cancelled');
+            return redirect($this->frontendUrl . '/payment/failed?reason=payment_cancelled');
         }
 
+        // Always verify with Khalti lookup — never trust frontend-only status
         $response = Http::withHeaders([
             'Authorization' => 'Key ' . config('services.khalti.secret_key'),
-        ])->post(config('services.khalti.base_url') . '/epayment/lookup/', [
-            'pidx' => $request->pidx
+        ])->withoutVerifying() 
+        ->post(config('services.khalti.base_url') . 'epayment/lookup/', [
+            'pidx' => $request->pidx,
         ]);
 
         if (!$response->successful()) {
@@ -106,7 +115,7 @@ class KhaltiController extends Controller
                 'body'   => $response->body(),
             ]);
             $payment->update(['status' => 'Failed']);
-            return redirect($this->frontendUrl . '/?payment/failed?reason=lookup_failed');
+            return redirect($this->frontendUrl . '/payment/failed?reason=lookup_failed');
         }
 
         $data = $response->json();
@@ -115,17 +124,18 @@ class KhaltiController extends Controller
         if (($data['status'] ?? null) === 'Completed') {
             $payment->update([
                 'transaction_id' => $data['transaction_id'] ?? null,
-                'status'         => 'Completed'
+                'status'         => 'Completed',
             ]);
 
             $payment->appointment->update(['status' => 'Confirmed']);
 
+            // BUG FIX: was '/?payment/success?...' — malformed URL, fixed to '/payment/success?...'
             return redirect(
-                $this->frontendUrl . '/?payment/success?appointment_id=' . $payment->appointment_id
+                $this->frontendUrl . '/payment/success?appointment_id=' . $payment->appointment_id
             );
         }
 
         $payment->update(['status' => 'Failed']);
-        return redirect($this->frontendUrl . '/?payment/failed?reason=payment_failed');
+        return redirect($this->frontendUrl . '/payment/failed?reason=payment_failed');
     }
 }

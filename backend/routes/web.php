@@ -6,3 +6,8 @@ Route::get('/khalti/initiate/{appointment_id}',
 
 Route::get('/khalti/verify', 
     [KhaltiController::class, 'verify'])->name('khalti.verify');
+
+
+
+
+    
