@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import FloatingAppointmentButton from "./components/user/components/FloatingAppointmentButton";
+import { useNavigate } from "react-router-dom";
 
 // User Components
 import Home from "./components/user/Pages/HomePages/Home";
@@ -31,8 +32,20 @@ import UserLayout from "./components/layouts/UserLayout";
 import AdminLayout from "./components/layouts/AdminLayout";
 import DoctorLayout from "./components/layouts/DoctorLayout";
 
+// Payment
+import { PaymentStatus } from './components/user/Pages/ServicePage/BookingPage.jsx';
+
+const PaymentSuccessPage = () => {
+  const navigate = useNavigate();
+  return <PaymentStatus onGoHome={() => navigate('/appointments')} />;
+};
+
+const PaymentFailedPage = () => {
+  const navigate = useNavigate();
+  return <PaymentStatus onGoHome={() => navigate('/service')} />;
+};
+
 function App() {
-  // ✅ State lives here — survives ALL route changes
   const [appointmentServices, setAppointmentServices] = useState([]);
 
   const addService = (service) => {
@@ -49,22 +62,23 @@ function App() {
 
   return (
     <AuthProvider>
-
-      {/* ✅ Outside Routes — renders on EVERY page when services are added */}
       <FloatingAppointmentButton count={appointmentServices.length} />
 
+      {/* ✅ ONE single Routes block — payment routes added here */}
       <Routes>
+
+        {/* ── PAYMENT ROUTES (no layout wrapper needed) ──────── */}
+        <Route path="/payment/success" element={<PaymentSuccessPage />} />
+        <Route path="/payment/failed"  element={<PaymentFailedPage  />} />
 
         {/* ── PUBLIC ROUTES ─────────────────────────────────── */}
         <Route element={<UserLayout />}>
-          <Route path="/"        element={<Home />} />
-          <Route path="/about"   element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login"   element={<Login />} />
+          <Route path="/"         element={<Home />} />
+          <Route path="/about"    element={<About />} />
+          <Route path="/contact"  element={<Contact />} />
+          <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/services" element={<ServicesSection />} />
-
-          {/* Pass state down to DentalServicesApp */}
           <Route
             path="/service"
             element={
@@ -86,12 +100,12 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/admindashboard"      element={<AdminDashboard />} />
-          <Route path="/usermanagement"      element={<UserManagement />} />
-          <Route path="/patientmanagement"   element={<PatientManagement />} />
-          <Route path="/servicemanagement"   element={<ServiceManagement />} />
+          <Route path="/admindashboard"        element={<AdminDashboard />} />
+          <Route path="/usermanagement"        element={<UserManagement />} />
+          <Route path="/patientmanagement"     element={<PatientManagement />} />
+          <Route path="/servicemanagement"     element={<ServiceManagement />} />
           <Route path="/appointmentmanagement" element={<AppointmentManagement />} />
-          <Route path="/doctormanagement"    element={<DoctorManagement />} />
+          <Route path="/doctormanagement"      element={<DoctorManagement />} />
         </Route>
 
         {/* ── DOCTOR ROUTES ──────────────────────────────────── */}

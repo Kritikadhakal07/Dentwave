@@ -122,7 +122,7 @@ class AppointmentController extends Controller
         // Insert appointment services
         foreach ($validated['service_ids'] as $serviceId) {
             DB::insert(
-                "INSERT INTO appointment_services (appointment_id, service_id, created_at, updated_at) 
+                "INSERT INTO appointments_services (appointment_id, service_id, created_at, updated_at) 
                  VALUES (?, ?, NOW(), NOW())",
                 [$appointmentId, $serviceId]
             );

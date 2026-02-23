@@ -1,6 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, DollarSign, Calendar, CreditCard, Check, AlertCircle, ChevronLeft, User, Shield } from 'lucide-react';
 
+// ─────────────────────────────────────────────────────────────
+// PaymentStatus — shown when Khalti redirects back to the app
+// Reads ?reason= or ?appointment_id= from the URL
+// Route: /payment/success  or  /payment/failed
+// ─────────────────────────────────────────────────────────────
+export const PaymentStatus = ({ onGoHome }) => {
+  const params        = new URLSearchParams(window.location.search);
+  const isSuccess     = window.location.pathname.includes('success');
+  const appointmentId = params.get('appointment_id');
+  const reason        = params.get('reason');
+
+  const reasonMap = {
+    appointment_not_found: 'Appointment not found.',
+    already_paid:          'This appointment has already been paid.',
+    initiate_failed:       'Could not connect to Khalti. Please try again.',
+    invalid_response:      'Invalid response from payment gateway.',
+    payment_not_found:     'Payment record not found.',
+    payment_cancelled:     'Payment was cancelled.',
+    lookup_failed:         'Could not verify payment. Contact support.',
+    payment_failed:        'Payment was not completed.',
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f4f6fb', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.07)', padding: '48px 40px', textAlign: 'center', maxWidth: 420, width: '100%' }}>
+        <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '🎉' : '❌'}</div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e', marginBottom: 10 }}>
+          {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
+        </h2>
+        <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
+          {isSuccess
+            ? `Your appointment #${appointmentId} has been confirmed. You'll receive a confirmation shortly.`
+            : (reasonMap[reason] || 'Something went wrong with your payment.')}
+        </p>
+        <button
+          onClick={onGoHome}
+          style={{ padding: '13px 32px', borderRadius: 12, border: 'none', background: isSuccess ? '#4f6ef7' : '#e74c3c', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 15 }}
+        >
+          {isSuccess ? 'View Appointments' : 'Try Again'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
+// ─────────────────────────────────────────────────────────────
+// BookingPage — main booking flow with Khalti integration
+// ─────────────────────────────────────────────────────────────
 const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) => {
   const [step, setStep]                     = useState(1);
   const [selectedDate, setSelectedDate]     = useState('');
@@ -35,7 +84,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
       setAvailableSlots([]);
       setSelectedTime('');
     }
-  }, [selectedDoctor, selectedDate, selectedServices]); // ✅ all 3 deps
+  }, [selectedDoctor, selectedDate, selectedServices]);
 
   const fetchAvailableSlots = async () => {
     setLoading(true);
@@ -98,9 +147,11 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     }
   };
 
+  // ── Create appointment then handle payment method ─────────────────
   const handleConfirmAppointment = async () => {
     setError('');
     if (!paymentMethod) { setError('Please select a payment method.'); return; }
+
     setLoading(true);
     try {
       const userId = localStorage.getItem('user_id') || 1;
@@ -118,10 +169,24 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
           service_ids:      selectedServices.map(s => parseInt(s.id)),
         }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to create appointment.');
+
+      const appointmentId = data.appointment?.id || data.id;
+
+      if (paymentMethod === 'khalti') {
+        // ── Redirect to Laravel Khalti initiation route ──────────
+        // The backend will call Khalti API and redirect to Khalti payment page
+        window.location.href = `http://127.0.0.1:8000/khalti/initiate/${appointmentId}`;
+        // No need to call onConfirm() — the page will navigate away
+        return;
+      }
+
+      // Cash / Insurance — no online payment needed
       alert('🎉 Appointment confirmed successfully!');
       onConfirm();
+
     } catch (err) {
       setError(err.message || 'Failed to create appointment.');
     } finally {
@@ -171,6 +236,8 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     slotBtn:   (active) => ({ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#4f6ef7' : '#ddd'}`, background: active ? '#4f6ef7' : '#fff', color: active ? '#fff' : '#444', cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.15s' }),
 
     payCard: (active) => ({ padding: '15px 18px', borderRadius: 12, border: `2px solid ${active ? '#4f6ef7' : '#eee'}`, background: active ? '#f5f7ff' : '#fafafa', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s' }),
+
+    khaltiCard: (active) => ({ padding: '15px 18px', borderRadius: 12, border: `2px solid ${active ? '#5C2D91' : '#eee'}`, background: active ? '#f5f0ff' : '#fafafa', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s' }),
 
     sumBox: { background: '#f8f9ff', borderRadius: 14, padding: '20px 22px', marginTop: 20 },
     sumRow: { display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #eee' },
@@ -230,7 +297,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                     <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{s.name}</p>
                     <div style={S.svcMeta}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11}/> {s.duration} min</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><DollarSign size={11}/> ${parseFloat(s.cost).toFixed(2)}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><DollarSign size={11}/> Rs. {parseFloat(s.cost).toFixed(2)}</span>
                     </div>
                   </div>
                   <button style={S.rmBtn} onClick={() => onRemoveService(s.id)}>Remove</button>
@@ -242,7 +309,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                   Duration: <strong style={{ color: '#333' }}>{totalDuration} min</strong>
                   <span style={{ color: '#bbb', fontSize: 12 }}> +5 buffer</span>
                 </span>
-                <span style={{ fontSize: 20, fontWeight: 800, color: '#4f6ef7' }}>${totalCost.toFixed(2)}</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#4f6ef7' }}>Rs. {totalCost.toFixed(2)}</span>
               </div>
 
               <button
@@ -259,8 +326,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
           ════════════════════════════════════════════ */}
           {step === 2 && (
             <div>
-
-              {/* Doctor dropdown */}
               <div style={{ marginBottom: 18 }}>
                 <label style={S.label}>
                   <User size={12} style={{ marginRight: 5, verticalAlign: 'middle' }}/> Select Doctor
@@ -277,7 +342,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                 </select>
               </div>
 
-              {/* Date picker */}
               <div style={{ marginBottom: 18 }}>
                 <label style={S.label}>
                   <Calendar size={12} style={{ marginRight: 5, verticalAlign: 'middle' }}/> Select Date
@@ -292,7 +356,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                 {selectedDate && <p style={S.hint}>📅 {formatDate(selectedDate)}</p>}
               </div>
 
-              {/* Prompt before selection */}
               {(!selectedDoctor || !selectedDate) && (
                 <div style={S.infoBox('info')}>
                   <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }}/>
@@ -300,7 +363,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                 </div>
               )}
 
-              {/* Spinner */}
               {loading && (
                 <div style={{ textAlign: 'center', padding: '28px 0', color: '#bbb', fontSize: 13 }}>
                   <div style={S.spin}/>
@@ -308,7 +370,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                 </div>
               )}
 
-              {/* Grouped slots */}
               {!loading && availableSlots.length > 0 && (
                 <div>
                   <label style={{ ...S.label, marginBottom: 14 }}>
@@ -339,7 +400,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                 </div>
               )}
 
-              {/* No slots warning */}
               {!loading && selectedDoctor && selectedDate && availableSlots.length === 0 && !error && (
                 <div style={S.infoBox('warn')}>
                   <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }}/>
@@ -356,20 +416,50 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
             <div>
               <p style={{ color: '#888', fontSize: 13, marginBottom: 18 }}>Choose your preferred payment method.</p>
 
-              {[
-                { id: 'card',      icon: <CreditCard size={22} color="#4f6ef7"/>, label: 'Credit / Debit Card', sub: 'Pay securely online'  },
-                { id: 'cash',      icon: <DollarSign size={22} color="#27ae60"/>, label: 'Pay at Clinic',       sub: 'Pay when you arrive'  },
-                { id: 'insurance', icon: <Shield     size={22} color="#e67e22"/>, label: 'Insurance',           sub: 'Use your coverage'    },
-              ].map(opt => (
-                <div key={opt.id} style={S.payCard(paymentMethod === opt.id)} onClick={() => { setPaymentMethod(opt.id); setError(''); }}>
-                  {opt.icon}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{opt.label}</p>
-                    <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>{opt.sub}</p>
-                  </div>
-                  {paymentMethod === opt.id && <Check size={17} color="#4f6ef7"/>}
+              {/* ── Khalti (online) ── */}
+              <div
+                style={S.khaltiCard(paymentMethod === 'khalti')}
+                onClick={() => { setPaymentMethod('khalti'); setError(''); }}
+              >
+                {/* Khalti purple logo icon (SVG inline) */}
+                <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+                  <rect width="40" height="40" rx="8" fill="#5C2D91"/>
+                  <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="18" fill="white" fontWeight="bold">K</text>
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#5C2D91' }}>Pay with Khalti</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>Secure online payment via Khalti wallet</p>
                 </div>
-              ))}
+                {paymentMethod === 'khalti' && <Check size={17} color="#5C2D91"/>}
+              </div>
+
+              {/* ── Pay at Clinic ── */}
+              <div style={S.payCard(paymentMethod === 'cash')} onClick={() => { setPaymentMethod('cash'); setError(''); }}>
+                <DollarSign size={22} color="#27ae60"/>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>Pay at Clinic</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>Pay in cash when you arrive</p>
+                </div>
+                {paymentMethod === 'cash' && <Check size={17} color="#4f6ef7"/>}
+              </div>
+
+              {/* ── Insurance ── */}
+              <div style={S.payCard(paymentMethod === 'insurance')} onClick={() => { setPaymentMethod('insurance'); setError(''); }}>
+                <Shield size={22} color="#e67e22"/>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>Insurance</p>
+                  <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>Use your health coverage</p>
+                </div>
+                {paymentMethod === 'insurance' && <Check size={17} color="#4f6ef7"/>}
+              </div>
+
+              {/* Khalti info note */}
+              {paymentMethod === 'khalti' && (
+                <div style={{ ...S.infoBox('info'), marginTop: 6, marginBottom: 4 }}>
+                  <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }}/>
+                  <span>You'll be redirected to Khalti to complete payment. Make sure you have sufficient balance.</span>
+                </div>
+              )}
 
               {/* Summary */}
               <div style={S.sumBox}>
@@ -379,7 +469,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                   ['Doctor',   selectedDoctorObj?.name || '—'],
                   ['Date',     formatDate(selectedDate)],
                   ['Time',     selectedTime ? `${selectedTime} (${totalDuration} min)` : '—'],
-                  ['Payment',  paymentMethod ? paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1) : '—'],
+                  ['Payment',  paymentMethod === 'khalti' ? 'Khalti' : paymentMethod ? paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1) : '—'],
                 ].map(([k, v]) => (
                   <div key={k} style={S.sumRow}>
                     <span style={{ color: '#aaa' }}>{k}</span>
@@ -388,7 +478,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 4 }}>
                   <span style={{ fontWeight: 700, fontSize: 15 }}>Total</span>
-                  <span style={{ fontWeight: 800, fontSize: 20, color: '#4f6ef7' }}>${totalCost.toFixed(2)}</span>
+                  <span style={{ fontWeight: 800, fontSize: 20, color: '#4f6ef7' }}>Rs. {totalCost.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -406,7 +496,11 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
               disabled={primaryDisabled}
               onClick={step === 3 ? handleConfirmAppointment : handleContinue}
             >
-              {loading ? 'Please wait…' : step === 3 ? '✓ Confirm Appointment' : 'Continue →'}
+              {loading
+                ? (paymentMethod === 'khalti' ? 'Redirecting to Khalti…' : 'Please wait…')
+                : step === 3
+                  ? (paymentMethod === 'khalti' ? '💜 Pay with Khalti' : '✓ Confirm Appointment')
+                  : 'Continue →'}
             </button>
           </div>
 
