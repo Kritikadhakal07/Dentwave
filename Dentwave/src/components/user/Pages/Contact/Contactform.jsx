@@ -55,7 +55,7 @@ alert(data.message);
         />
       </Form.Group>
 
-      <Form.Group className="mb-4 fw-bold" controlId="contactEmail">
+      <Form.Group className="mb-4 fw-bold">
         <Form.Label>Your Email</Form.Label>
         <Form.Control
           type="email"
@@ -78,7 +78,7 @@ alert(data.message);
         />
       </Form.Group>
 
-      <Form.Group className="mb-4 fw-bold" controlId="contactMessage">
+      <Form.Group className="mb-4 fw-bold">
         <Form.Label>Your Message</Form.Label>
         <Form.Control
           as="textarea"

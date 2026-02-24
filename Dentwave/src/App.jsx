@@ -1,9 +1,9 @@
 import { Routes, Route } from "react-router-dom";
+import { useState } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import { useEffect } from "react";
-
-
+import FloatingAppointmentButton from "./components/user/components/FloatingAppointmentButton";
+import { useNavigate } from "react-router-dom";
 
 // User Components
 import Home from "./components/user/Pages/HomePages/Home";
@@ -12,6 +12,7 @@ import About from "./components/user/Pages/About/About";
 import Contact from "./components/user/Pages/Contact/Contact";
 import Login from "./components/user/Pages/Login/Login";
 import Register from "./components/user/Pages/Login/Register";
+import ServicesSection from "./components/user/Pages/HomePages/Services.jsx";
 
 // Admin Components
 import AdminDashboard from "./components/admin/pages/Adminboard";
@@ -31,42 +32,67 @@ import UserLayout from "./components/layouts/UserLayout";
 import AdminLayout from "./components/layouts/AdminLayout";
 import DoctorLayout from "./components/layouts/DoctorLayout";
 
+// Payment
+import { PaymentStatus } from './components/user/Pages/ServicePage/BookingPage.jsx';
+
+const PaymentSuccessPage = () => {
+  const navigate = useNavigate();
+  return <PaymentStatus onGoHome={() => navigate('/appointments')} />;
+};
+
+const PaymentFailedPage = () => {
+  const navigate = useNavigate();
+  return <PaymentStatus onGoHome={() => navigate('/service')} />;
+};
+
 function App() {
+  const [appointmentServices, setAppointmentServices] = useState([]);
 
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const payment = params.get('payment');
-
-    if (payment === 'success') {
-      const appointmentId = params.get('appointment_id');
-      alert(`✅ Payment Successful! Appointment #${appointmentId} confirmed.`);
-      window.history.replaceState({}, '', '/');
+  const addService = (service) => {
+    if (!appointmentServices.find(s => s.id === service.id)) {
+      setAppointmentServices(prev => [...prev, service]);
     }
+  };
 
-    if (payment === 'failed') {
-      alert('❌ Payment failed. Please try again.');
-      window.history.replaceState({}, '', '/');
-    }
-  }, []);
+  const removeService = (id) => {
+    setAppointmentServices(prev => prev.filter(s => s.id !== id));
+  };
+
+  const clearServices = () => setAppointmentServices([]);
+
   return (
     <AuthProvider>
+      <FloatingAppointmentButton count={appointmentServices.length} />
+
+      {/* ✅ ONE single Routes block — payment routes added here */}
       <Routes>
-        {/* ============================================ */}
-        {/* PUBLIC ROUTES (No login needed) */}
-        {/* ============================================ */}
+
+        {/* ── PAYMENT ROUTES (no layout wrapper needed) ──────── */}
+        <Route path="/payment/success" element={<PaymentSuccessPage />} />
+        <Route path="/payment/failed"  element={<PaymentFailedPage  />} />
+
+        {/* ── PUBLIC ROUTES ─────────────────────────────────── */}
         <Route element={<UserLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/service" element={<DentalServicesApp />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/"         element={<Home />} />
+          <Route path="/about"    element={<About />} />
+          <Route path="/contact"  element={<Contact />} />
+          <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/services" element={<ServicesSection />} />
+          <Route
+            path="/service"
+            element={
+              <DentalServicesApp
+                appointmentServices={appointmentServices}
+                onAddService={addService}
+                onRemoveService={removeService}
+                onClearServices={clearServices}
+              />
+            }
+          />
         </Route>
 
-        {/* ============================================ */}
-        {/* ADMIN ROUTES (Login required, admin only) */}
-        {/* ============================================ */}
+        {/* ── ADMIN ROUTES ───────────────────────────────────── */}
         <Route
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
@@ -74,17 +100,15 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/admindashboard" element={<AdminDashboard />} />
-          <Route path="/usermanagement" element={<UserManagement />} />
-          <Route path="/patientmanagement" element={<PatientManagement />} />
-          <Route path="/servicemanagement" element={<ServiceManagement />} />
+          <Route path="/admindashboard"        element={<AdminDashboard />} />
+          <Route path="/usermanagement"        element={<UserManagement />} />
+          <Route path="/patientmanagement"     element={<PatientManagement />} />
+          <Route path="/servicemanagement"     element={<ServiceManagement />} />
           <Route path="/appointmentmanagement" element={<AppointmentManagement />} />
-          <Route path="/doctormanagement" element={<DoctorManagement />} />
+          <Route path="/doctormanagement"      element={<DoctorManagement />} />
         </Route>
 
-        {/* ============================================ */}
-        {/* DOCTOR ROUTES (Login required, doctor only) */}
-        {/* ============================================ */}
+        {/* ── DOCTOR ROUTES ──────────────────────────────────── */}
         <Route
           element={
             <ProtectedRoute allowedRoles={["doctor"]}>
@@ -93,20 +117,10 @@ function App() {
           }
         >
           <Route path="/doctordashboard" element={<DoctorDashboard />} />
-          <Route path="/appointments" element={<Appointments />} />
-          <Route path="/doctorprofile" element={<DoctorProfile />} />
+          <Route path="/appointments"    element={<Appointments />} />
+          <Route path="/doctorprofile"   element={<DoctorProfile />} />
         </Route>
 
-        {/* ============================================ */}
-        {/* USER/PATIENT ROUTES (Login required) */}
-        {/* Note: Add these when you create patient dashboard */}
-        {/* ============================================ */}
-        {/* Example:
-        <Route element={<ProtectedRoute allowedRoles={["Patient"]}>}>
-          <Route path="/my-appointments" element={<MyAppointments />} />
-          <Route path="/book-appointment" element={<BookAppointment />} />
-        </Route>
-        */}
       </Routes>
     </AuthProvider>
   );

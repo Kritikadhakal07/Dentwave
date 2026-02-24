@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, DollarSign, Calendar, CreditCard, Check, AlertCircle, ChevronLeft, User, Shield } from 'lucide-react';
 
-
+// ─────────────────────────────────────────────────────────────
+// PaymentStatus — shown when Khalti redirects back to the app
+// Reads ?reason= or ?appointment_id= from the URL
+// Route: /payment/success  or  /payment/failed
+// ─────────────────────────────────────────────────────────────
 export const PaymentStatus = ({ onGoHome }) => {
   const params        = new URLSearchParams(window.location.search);
   const isSuccess     = window.location.pathname.includes('success');
@@ -43,6 +47,9 @@ export const PaymentStatus = ({ onGoHome }) => {
 };
 
 
+// ─────────────────────────────────────────────────────────────
+// BookingPage — main booking flow with Khalti integration
+// ─────────────────────────────────────────────────────────────
 const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) => {
   const [step, setStep]                     = useState(1);
   const [selectedDate, setSelectedDate]     = useState('');
@@ -57,6 +64,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
   const totalCost     = selectedServices.reduce((sum, s) => sum + parseFloat(s.cost || 0), 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + parseInt(s.duration || 0), 0);
 
+  // ── Fetch active doctors once on mount ────────────────────────────
   useEffect(() => {
     fetch('http://127.0.0.1:8000/api/doctors')
       .then(r => r.json())
@@ -68,7 +76,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
       .catch(() => setError('Failed to load doctors. Please try again.'));
   }, []);
 
-
+  // ── Re-fetch slots when doctor, date, or services change ──────────
   useEffect(() => {
     if (selectedDoctor && selectedDate && selectedServices.length > 0) {
       fetchAvailableSlots();
@@ -168,13 +176,14 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
       const appointmentId = data.appointment?.id || data.id;
 
       if (paymentMethod === 'khalti') {
-       
+        // ── Redirect to Laravel Khalti initiation route ──────────
+        // The backend will call Khalti API and redirect to Khalti payment page
         window.location.href = `http://127.0.0.1:8000/khalti/initiate/${appointmentId}`;
-       
+        // No need to call onConfirm() — the page will navigate away
         return;
       }
 
-     
+      // Cash / Insurance — no online payment needed
       alert('🎉 Appointment confirmed successfully!');
       onConfirm();
 
@@ -188,6 +197,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
   const selectedDoctorObj  = doctors.find(d => d.id == selectedDoctor);
   const primaryDisabled    = loading || (step === 1 && selectedServices.length === 0);
 
+  // ── Styles ────────────────────────────────────────────────────────
   const S = {
     page:    { minHeight: '100vh', background: '#f4f6fb', padding: '40px 16px' },
     wrap:    { maxWidth: 660, margin: '0 auto' },
@@ -263,12 +273,16 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
             ))}
           </div>
 
+          {/* ── Error ───────────────────────────────────── */}
           {error && (
             <div style={S.errBox}>
               <AlertCircle size={17} style={{ flexShrink: 0, marginTop: 1 }}/> {error}
             </div>
           )}
 
+          {/* ════════════════════════════════════════════
+              STEP 1 — Services
+          ════════════════════════════════════════════ */}
           {step === 1 && (
             <div>
               <p style={{ color: '#888', fontSize: 13, marginBottom: 18 }}>Review your selected services before continuing.</p>
@@ -307,6 +321,9 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
             </div>
           )}
 
+          {/* ════════════════════════════════════════════
+              STEP 2 — Doctor, Date & Time
+          ════════════════════════════════════════════ */}
           {step === 2 && (
             <div>
               <div style={{ marginBottom: 18 }}>
@@ -392,7 +409,9 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
             </div>
           )}
 
-         
+          {/* ════════════════════════════════════════════
+              STEP 3 — Payment
+          ════════════════════════════════════════════ */}
           {step === 3 && (
             <div>
               <p style={{ color: '#888', fontSize: 13, marginBottom: 18 }}>Choose your preferred payment method.</p>
