@@ -49,7 +49,7 @@ function Header() {
         <Link to="/" className="navbar-brand" onClick={closeMenu}>
           <img 
             className="logo" 
-            src="logo.jpg" 
+            src="logo.png" 
             alt="Logo"
             style={{ height: '50px' }}
           />
