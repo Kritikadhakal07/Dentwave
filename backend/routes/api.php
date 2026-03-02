@@ -21,6 +21,7 @@ Route::post('/users', [UserController::class, 'store']);
 Route::post('/users/update/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::post('/contact', [ContactController::class, 'store']);
+Route::get('/users/{id}', [UserController::class, 'show']);
 
 
 

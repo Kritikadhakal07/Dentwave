@@ -25,7 +25,7 @@ class AppointmentController extends Controller
         foreach ($appointments as $appointment) {
             $services = DB::select("
                 SELECT s.id, s.name, s.cost, s.duration
-                FROM appointment_services aps
+                FROM appointments_services aps
                 LEFT JOIN services s ON aps.service_id = s.id
                 WHERE aps.appointment_id = ?
             ", [$appointment->id]);
@@ -50,7 +50,7 @@ class AppointmentController extends Controller
         foreach ($appointments as $appointment) {
             $services = DB::select("
                 SELECT s.id, s.name, s.cost, s.duration
-                FROM appointment_services aps
+                FROM appointments_services aps
                 LEFT JOIN services s ON aps.service_id = s.id
                 WHERE aps.appointment_id = ?
             ", [$appointment->id]);
@@ -156,7 +156,7 @@ class AppointmentController extends Controller
 
         $services = DB::select("
             SELECT s.id, s.name, s.cost, s.duration
-            FROM appointment_services aps
+            FROM appointments_services aps
             LEFT JOIN services s ON aps.service_id = s.id
             WHERE aps.appointment_id = ?
         ", [$id]);
@@ -198,7 +198,7 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'Appointment not found'], 404);
         }
 
-        DB::delete("DELETE FROM appointment_services WHERE appointment_id = ?", [$id]);
+        DB::delete("DELETE FROM appointments_services WHERE appointment_id = ?", [$id]);
         DB::delete("DELETE FROM appointments WHERE id = ?", [$id]);
 
         return response()->json([

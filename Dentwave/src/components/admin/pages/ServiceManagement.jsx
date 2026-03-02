@@ -33,21 +33,31 @@ export default function ServiceManagement() {
 
   // Handle input changes for ADD mode
   const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
-  };
+  const { name, value, files } = e.target;
+
+  if ((name === "cost" || name === "duration") && Number(value) < 0) {
+    return;
+  }
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: files ? files[0] : value
+  }));
+};
 
   // Handle input changes for EDIT mode
   const handleEditChange = (e) => {
-    const { name, value, files } = e.target;
-    setEditService(prev => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
-  };
+  const { name, value, files } = e.target;
+
+  if ((name === "cost" || name === "duration") && Number(value) < 0) {
+    return;
+  }
+
+  setEditService(prev => ({
+    ...prev,
+    [name]: files ? files[0] : value
+  }));
+};
 
   // Open modal for editing
   const openEditModal = (service) => {
@@ -82,6 +92,15 @@ export default function ServiceManagement() {
 
   // Handle Add or Update
   const handleAddOrUpdate = async () => {
+    const data = editService || formData;
+
+if (Number(data.cost) < 0) {
+  return alert("Price cannot be negative");
+}
+
+if (Number(data.duration) <= 0) {
+  return alert("Duration must be greater than 0");
+}
     try {
       const payload = new FormData();
       
@@ -284,6 +303,8 @@ export default function ServiceManagement() {
                       <input 
                         type="number" 
                         name="cost" 
+                         min="0"
+                        step="0.01"
                         className="form-control"
                         value={editService ? editService.cost : formData.cost}
                         onChange={editService ? handleEditChange : handleInputChange}
@@ -295,6 +316,7 @@ export default function ServiceManagement() {
                         type="number" 
                         name="duration" 
                         className="form-control"
+                        min="1"
                         value={editService ? editService.duration : formData.duration}
                         onChange={editService ? handleEditChange : handleInputChange}
                       />

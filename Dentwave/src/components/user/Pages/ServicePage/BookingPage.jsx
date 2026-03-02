@@ -26,7 +26,7 @@ export const PaymentStatus = ({ onGoHome }) => {
   return (
     <div style={{ minHeight: '100vh', background: '#f4f6fb', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.07)', padding: '48px 40px', textAlign: 'center', maxWidth: 420, width: '100%' }}>
-        <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '🎉' : '❌'}</div>
+        <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '' : ''}</div>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e', marginBottom: 10 }}>
           {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
         </h2>
@@ -117,12 +117,12 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
 
   // ── Group slots into Morning / Afternoon / Evening ────────────────
   const groupedSlots = () => {
-    const groups = { '🌅 Morning': [], '🌇 Afternoon': [], '🌆 Evening': [] };
+    const groups = { ' Morning': [], 'Afternoon': [], ' Evening': [] };
     availableSlots.forEach(slot => {
       const hour = parseInt(slot.start_time.split(':')[0]);
-      if (hour < 12)      groups['🌅 Morning'].push(slot);
-      else if (hour < 17) groups['🌇 Afternoon'].push(slot);
-      else                groups['🌆 Evening'].push(slot);
+      if (hour < 12)      groups[' Morning'].push(slot);
+      else if (hour < 17) groups[' Afternoon'].push(slot);
+      else                groups['Evening'].push(slot);
     });
     return groups;
   };

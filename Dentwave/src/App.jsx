@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import FloatingAppointmentButton from "./components/user/components/FloatingAppointmentButton";
 import { useNavigate } from "react-router-dom";
 
+
 // User Components
 import Home from "./components/user/Pages/HomePages/Home";
 import DentalServicesApp from "./components/user/Pages/ServicePage/DentalServicesApp";
@@ -21,6 +22,7 @@ import PatientManagement from "./components/admin/pages/PatientManagement";
 import ServiceManagement from "./components/admin/pages/ServiceManagement";
 import AppointmentManagement from "./components/admin/pages/AppointmentManagement";
 import DoctorManagement from "./components/admin/pages/DoctorManagement/DoctorManagement";
+import AdminProfile from "./components/admin/pages/AdminProfile";
 
 // Doctor Components
 import DoctorDashboard from "./components/doctor/pages/DoctorDashboard";
@@ -106,6 +108,7 @@ function App() {
           <Route path="/servicemanagement"     element={<ServiceManagement />} />
           <Route path="/appointmentmanagement" element={<AppointmentManagement />} />
           <Route path="/doctormanagement"      element={<DoctorManagement />} />
+          <Route path="/admin/profile" element={<AdminProfile />} />
         </Route>
 
         {/* ── DOCTOR ROUTES ──────────────────────────────────── */}
