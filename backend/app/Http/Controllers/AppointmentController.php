@@ -35,7 +35,11 @@ class AppointmentController extends Controller
             $appointment->services = $services;
         }
 
-        return response()->json($appointments);
+ return response()->json([
+    'success' => true,
+    'appointments' => $appointments
+]);
+
     }
 
     public function getByUser($userId)
@@ -57,10 +61,14 @@ class AppointmentController extends Controller
                 LEFT JOIN services s ON aps.service_id = s.id
                 WHERE aps.appointment_id = ?
             ", [$appointment->id]);
-            $appointment->services = $services;
+            $appointments->services = $services;
         }
 
-        return response()->json($appointments);
+return response()->json([
+    'success' => true,
+    'appointments' => $appointments
+]);
+
     }
 
     public function store(Request $request)
@@ -131,11 +139,14 @@ class AppointmentController extends Controller
             );
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Appointment created successfully',
-            'appointment' => $appointment[0]
-        ]);
+       return response()->json([
+    'success' => true,
+    'message' => 'Appointment created successfully',
+    'appointmentId' => $appointmentId,  
+    'appointment' => $appointment[0]
+]);
+
+
     }
 
     public function show($id)

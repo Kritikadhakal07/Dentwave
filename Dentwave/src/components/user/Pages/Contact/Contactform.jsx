@@ -1,63 +1,57 @@
-import React, { useState } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
+import React ,{useState} from "react";
+import { Form, Button } from "react-bootstrap";
 import axios from "axios";
+
 
 export default function Contactform({ submitLabel = "Submit Message" }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    message: "",
+    message: ""
+
   });
+  const [loading, setLoading]= useState(false);
 
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (e) =>{
+const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccess("");
-    setError("");
+    setLoading(true);
+    
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/contact",
-        formData
-      );
+      const res = await axios.post("http://127.0.0.1:8000/api/contact", formData);
 
-      setSuccess(response.data.message);
-
-      // Clear form after success
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        message: "",
-      });
-
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
+// If res.data is a string, clean it first
+let data = res.data;
+if (typeof data === "string") {
+  data = data.replace(/^<+/, ""); // remove any leading '<'
+  data = JSON.parse(data);
+}
+alert(data.message);
+      setFormData({ name: "", email: "", phone: "", message: "" });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-
   return (
-    <Form onSubmit={handleSubmit}>
-      {success && <Alert variant="success">{success}</Alert>}
-      {error && <Alert variant="danger">{error}</Alert>}
-
-      <Form.Group className="mb-4 fw-bold">
+   <Form onSubmit={handleSubmit}>
+      <Form.Group className="mb-4 fw-bold" controlId="contactName">
         <Form.Label>Your Name</Form.Label>
         <Form.Control
           type="text"
           name="name"
           value={formData.name}
-          onChange={handleChange}
+          onChange={handleInputChange}
+          placeholder="Enter your full name"
+          required
         />
       </Form.Group>
 
@@ -67,17 +61,20 @@ export default function Contactform({ submitLabel = "Submit Message" }) {
           type="email"
           name="email"
           value={formData.email}
-          onChange={handleChange}
+          onChange={handleInputChange}
+          placeholder="you@example.com"
+          required
         />
       </Form.Group>
 
-      <Form.Group className="mb-4 fw-bold">
+      <Form.Group className="mb-4 fw-bold" controlId="contactPhone">
         <Form.Label>Your Phone Number</Form.Label>
         <Form.Control
           type="text"
           name="phone"
           value={formData.phone}
-          onChange={handleChange}
+          onChange={handleInputChange}
+          placeholder=""
         />
       </Form.Group>
 
@@ -85,15 +82,17 @@ export default function Contactform({ submitLabel = "Submit Message" }) {
         <Form.Label>Your Message</Form.Label>
         <Form.Control
           as="textarea"
-          rows={4}
           name="message"
           value={formData.message}
-          onChange={handleChange}
+          onChange={handleInputChange}
+          rows={4}
+          placeholder="How can we help?"
+          required
         />
       </Form.Group>
 
-      <Button type="submit" className="w-100">
-        {submitLabel}
+      <Button type="submit" className="w-100" disabled={loading}>
+        {loading ? "Sending..." : submitLabel}
       </Button>
     </Form>
   );
