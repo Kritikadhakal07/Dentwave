@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Bell, ChevronDown, LogOut, User, Shield, X, Calendar, Stethoscope, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+
 const API = 'http://127.0.0.1:8000/api';
 
 export default function Header() {

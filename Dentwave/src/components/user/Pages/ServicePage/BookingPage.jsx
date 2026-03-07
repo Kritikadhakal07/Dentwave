@@ -102,6 +102,7 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
       });
       const data = await res.json();
       if (data.success) {
+       
         setAvailableSlots(data.available_slots);
       } else {
         setError(data.message || 'No slots available.');
@@ -116,16 +117,27 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
   };
 
   // ── Group slots into Morning / Afternoon / Evening ────────────────
+  // const groupedSlots = () => {
+  //   const groups = { ' Morning': [], 'Afternoon': [], ' Evening': [] };
+  //   availableSlots.forEach(slot => {
+  //     const hour = parseInt(slot.start_time.split(':')[0]);
+  //     if (hour < 12)      groups['Morning'].push(slot);
+  //     else if (hour < 17) groups['Afternoon'].push(slot);
+  //     else                groups['Evening'].push(slot);
+  //   });
+  //   return groups;
+  // };
+
   const groupedSlots = () => {
-    const groups = { ' Morning': [], 'Afternoon': [], ' Evening': [] };
-    availableSlots.forEach(slot => {
-      const hour = parseInt(slot.start_time.split(':')[0]);
-      if (hour < 12)      groups[' Morning'].push(slot);
-      else if (hour < 17) groups[' Afternoon'].push(slot);
-      else                groups['Evening'].push(slot);
-    });
-    return groups;
-  };
+  const groups = { Morning: [], Afternoon: [], Evening: [] };
+  availableSlots.forEach(slot => {
+    const hour = parseInt(slot.start_time.split(':')[0]);
+    if (hour < 12)      groups.Morning.push(slot);
+    else if (hour < 17) groups.Afternoon.push(slot);
+    else                groups.Evening.push(slot);
+  });
+  return groups;
+};
 
   const formatDate = (d) => {
     if (!d) return '';
