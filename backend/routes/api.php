@@ -36,6 +36,8 @@ Route::get('/doctors', [DoctorController::class, 'index']);
 Route::post('/doctors', [DoctorController::class, 'store']);
 Route::post('/doctors/update/{id}', [DoctorController::class, 'update']);
 Route::delete('/doctors/{id}', [DoctorController::class, 'destroy']);
+Route::get('doctor/profile/{id}',    [DoctorProfileController::class, 'getProfile']);
+Route::post('doctor/profile/{id}',   [DoctorProfileController::class, 'updateProfile']);
 
 
  Route::post('/time-slots', [TimeSlotController::class, 'store']);

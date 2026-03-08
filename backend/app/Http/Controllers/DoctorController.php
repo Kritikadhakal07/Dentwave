@@ -8,6 +8,56 @@ use Illuminate\Support\Facades\Storage;
 
 class DoctorController extends Controller
 {
+
+    // Fetch doctor profile
+    public function getProfile($id)
+    {
+        $doctor = DB::select('SELECT * FROM doctors WHERE id = ?', [$id]);
+
+        if (empty($doctor)) {
+            return response()->json(['message' => 'Doctor not found'], 404);
+        }
+
+        return response()->json($doctor[0]);
+    }
+
+    // Update doctor profile
+    public function updateProfile(Request $request, $id)
+    {
+        $doctor = DB::select('SELECT * FROM doctors WHERE id = ?', [$id]);
+
+        if (empty($doctor)) {
+            return response()->json(['message' => 'Doctor not found'], 404);
+        }
+
+        $name           = $request->input('name');
+        $specialization = $request->input('specialization');
+        $experience     = $request->input('experience');
+        $contact        = $request->input('contact');
+        $status         = $request->input('status', 'Active');
+        $imagePath      = null;
+
+        if ($request->hasFile('image')) {
+            $file      = $request->file('image');
+            $fileName  = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/doctor_images'), $fileName);
+            $imagePath = 'uploads/doctor_images/' . $fileName;
+        }
+
+        if ($imagePath) {
+            DB::update(
+                'UPDATE doctors SET name = ?, specialization = ?, experience = ?, contact = ?, status = ?, image = ?, updated_at = NOW() WHERE id = ?',
+                [$name, $specialization, $experience, $contact, $status, $imagePath, $id]
+            );
+        } else {
+            DB::update(
+                'UPDATE doctors SET name = ?, specialization = ?, experience = ?, contact = ?, status = ?, updated_at = NOW() WHERE id = ?',
+                [$name, $specialization, $experience, $contact, $status, $id]
+            );
+        }
+
+        return response()->json(['message' => 'Profile updated successfully']);
+    }
     public function index()
     {
         $doctors = DB::select("SELECT * FROM doctors ORDER BY id DESC");
