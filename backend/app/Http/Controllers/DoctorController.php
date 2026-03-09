@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 class DoctorController extends Controller
 {
@@ -14,26 +15,79 @@ class DoctorController extends Controller
         return response()->json($doctors);
     }
 
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'specialization' => 'required|string',
+    //         'experience' => 'required|string',
+    //         'contact' => 'required|string',
+    //         'status' => 'required|in:Active,On Leave,Vacation',
+    //         'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    //     ]);
+
+    //     $imagePath = null;
+    //     if ($request->hasFile('image')) {
+    //         $imagePath = $request->file('image')->store('doctors', 'public');
+    //     }
+
+    //     DB::insert(
+    //         "INSERT INTO doctors (name, specialization, experience, contact, status, image, created_at, updated_at)
+    //          VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
+    //         [
+    //             $validated['name'],
+    //             $validated['specialization'],
+    //             $validated['experience'],
+    //             $validated['contact'],
+    //             $validated['status'],
+    //             $imagePath
+    //         ]
+    //     );
+
+    //     $doctor = DB::select("SELECT * FROM doctors ORDER BY id DESC LIMIT 1");
+    //     return response()->json($doctor[0]);
+    // }
+
+
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'specialization' => 'required|string',
-            'experience' => 'required|string',
-            'contact' => 'required|string',
-            'status' => 'required|in:Active,On Leave,Vacation',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|min:6',
+        'specialization' => 'required|string',
+        'experience' => 'required|string',
+        'contact' => 'required|string',
+        'status' => 'required|in:Active,On Leave,Vacation',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+
+        // Create login account for doctor
+        $userId = DB::table('users')->insertGetId([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'doctor',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
+        // Upload image
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('doctors', 'public');
         }
 
+        // Insert doctor profile
         DB::insert(
-            "INSERT INTO doctors (name, specialization, experience, contact, status, image, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            "INSERT INTO doctors (user_id, name, specialization, experience, contact, status, image, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
             [
+                $userId,
                 $validated['name'],
                 $validated['specialization'],
                 $validated['experience'],
@@ -43,9 +97,25 @@ class DoctorController extends Controller
             ]
         );
 
+        DB::commit();
+
         $doctor = DB::select("SELECT * FROM doctors ORDER BY id DESC LIMIT 1");
-        return response()->json($doctor[0]);
+
+        return response()->json([
+            'success' => true,
+            'doctor' => $doctor[0]
+        ]);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function update(Request $request, $id)
     {
