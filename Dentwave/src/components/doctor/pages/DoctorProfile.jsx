@@ -36,7 +36,7 @@ function DoctorProfilePage() {
 
   const [stats, setStats] = useState({ totalAppointments: 0, pending: 0, completed: 0 });
 
-  // ── fetch profile ─────────────────────────────────────────────────
+  //  fetch profile 
   const fetchProfile = useCallback(() => {
     if (!doctorId) return;
     fetch(`${API}/doctor/profile/${doctorId}`)
@@ -87,7 +87,7 @@ function DoctorProfilePage() {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  // ── save profile ──────────────────────────────────────────────────
+  // save profile 
   const handleSave = async () => {
     const errs = {};
     if (!form.name.trim())           errs.name           = 'Name is required.';

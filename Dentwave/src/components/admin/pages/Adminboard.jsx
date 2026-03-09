@@ -30,7 +30,7 @@ function useApi(url) {
   return { data, loading, error, refetch: fetch_ };
 }
 
-// ── Stat card ────────────────────────────────────────────────────────
+// ── Stat card 
 function StatCard({ label, value, icon, color, loading, sub }) {
   const colors = {
     blue:   { bg: '#eff6ff', accent: '#3b82f6', text: '#1d4ed8' },
