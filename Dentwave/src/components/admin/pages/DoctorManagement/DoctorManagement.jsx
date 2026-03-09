@@ -10,15 +10,16 @@ const DoctorManagement = () => {
   const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
   const [editDoctor, setEditDoctor] = useState(null);
   const [editTimeSlot, setEditTimeSlot] = useState(null);
-
-  const [doctorForm, setDoctorForm] = useState({
-    name: '',
-    specialization: '',
-    experience: '',
-    contact: '',
-    status: 'Active',
-    image: null
-  });
+const [doctorForm, setDoctorForm] = useState({
+  name: '',
+  email: '',        // add this
+  password: '',     // add this
+  specialization: '',
+  experience: '',
+  contact: '',
+  status: 'Active',
+  image: null
+});
 
   const [timeSlotForm, setTimeSlotForm] = useState({
     doctor_id: '',
@@ -63,6 +64,8 @@ const DoctorManagement = () => {
     try {
       const payload = new FormData();
       payload.append('name', doctorForm.name);
+         payload.append('email', doctorForm.email);        // ← MISSING
+    payload.append('password', doctorForm.password);
       payload.append('specialization', doctorForm.specialization);
       payload.append('experience', doctorForm.experience);
       payload.append('contact', doctorForm.contact);
@@ -82,14 +85,16 @@ const DoctorManagement = () => {
       fetchDoctors();
       setShowAddDoctor(false);
       setEditDoctor(null);
-      setDoctorForm({
-        name: '',
-        specialization: '',
-        experience: '',
-        contact: '',
-        status: 'Active',
-        image: null
-      });
+     setDoctorForm({
+  name: '',
+  email: '',        // add this
+  password: '',     // add this
+  specialization: '',
+  experience: '',
+  contact: '',
+  status: 'Active',
+  image: null
+});
     } catch (err) {
       console.error("Error saving doctor:", err);
       alert("Error: " + (err.response?.data?.message || err.message));
@@ -111,6 +116,8 @@ const DoctorManagement = () => {
     setEditDoctor(doctor);
     setDoctorForm({
       name: doctor.name,
+       email: doctor.email || '',   // ← MISSING
+    password: '', 
       specialization: doctor.specialization,
       experience: doctor.experience,
       contact: doctor.contact,
@@ -349,6 +356,15 @@ const DoctorManagement = () => {
                       <label className="form-label">Full Name</label>
                       <input className="form-control" value={doctorForm.name} onChange={(e) => setDoctorForm({...doctorForm, name: e.target.value})} />
                     </div>
+                    <div className="mb-3">
+                      <label className="form-label">Email Address</label>
+                      <input type="email" className="form-control" value={doctorForm.email} onChange={(e) => setDoctorForm({...doctorForm, email: e.target.value})} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Password</label>
+                      <input type="password" className="form-control" value={doctorForm.password} onChange={(e) => setDoctorForm({...doctorForm, password: e.target.value})} />
+                    </div>
+
                     <div className="mb-3">
                       <label className="form-label">Specialization</label>
                       <input className="form-control" value={doctorForm.specialization} onChange={(e) => setDoctorForm({...doctorForm, specialization: e.target.value})} />
