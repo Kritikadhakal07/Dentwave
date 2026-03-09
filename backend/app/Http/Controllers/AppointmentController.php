@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+
 
 class AppointmentController extends Controller
 {
@@ -25,7 +28,7 @@ class AppointmentController extends Controller
         foreach ($appointments as $appointment) {
             $services = DB::select("
                 SELECT s.id, s.name, s.cost, s.duration
-                FROM appointment_services aps
+                FROM appointments_services aps
                 LEFT JOIN services s ON aps.service_id = s.id
                 WHERE aps.appointment_id = ?
             ", [$appointment->id]);
@@ -50,7 +53,7 @@ class AppointmentController extends Controller
         foreach ($appointments as $appointment) {
             $services = DB::select("
                 SELECT s.id, s.name, s.cost, s.duration
-                FROM appointment_services aps
+                FROM appointments_services aps
                 LEFT JOIN services s ON aps.service_id = s.id
                 WHERE aps.appointment_id = ?
             ", [$appointment->id]);
@@ -122,7 +125,7 @@ class AppointmentController extends Controller
         // Insert appointment services
         foreach ($validated['service_ids'] as $serviceId) {
             DB::insert(
-                "INSERT INTO appointment_services (appointment_id, service_id, created_at, updated_at) 
+                "INSERT INTO appointments_services (appointment_id, service_id, created_at, updated_at) 
                  VALUES (?, ?, NOW(), NOW())",
                 [$appointmentId, $serviceId]
             );
@@ -156,7 +159,7 @@ class AppointmentController extends Controller
 
         $services = DB::select("
             SELECT s.id, s.name, s.cost, s.duration
-            FROM appointment_services aps
+            FROM appointments_services aps
             LEFT JOIN services s ON aps.service_id = s.id
             WHERE aps.appointment_id = ?
         ", [$id]);
@@ -166,30 +169,75 @@ class AppointmentController extends Controller
         return response()->json($appointment[0]);
     }
 
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'status' => 'required|in:Pending,Confirmed,Cancelled,Completed',
+
+
+public function update(Request $request, $id)
+{
+    $validated = $request->validate([
+        'status' => 'required|in:Pending,Confirmed,Cancelled,Completed',
+    ]);
+
+    $existing = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
+    if (empty($existing)) {
+        return response()->json(['message' => 'Appointment not found'], 404);
+    }
+
+    $appointment = $existing[0];
+
+    // Soft delete logic — when admin sets status to Cancelled
+    if ($validated['status'] === 'Cancelled') {
+
+        // Check if a completed Khalti payment exists for this appointment
+        $payment = \App\Models\Payment::where('appointment_id', $id)
+            ->where('status', 'Completed')
+            ->where('gateway', 'Khalti')
+            ->first();
+
+        // Build notification message
+        $refundNote = $payment
+            ? "Your appointment has been cancelled by the admin. Since you paid via Khalti, please contact support for your refund of Rs. " . number_format($payment->amount, 2) . "."
+            : "Your appointment has been cancelled by the admin.";
+
+        // Create in-app notification for the user
+        \App\Models\Notification::create([
+            'user_id' => $appointment->user_id,
+            'title'   => 'Appointment Cancelled',
+            'message' => $refundNote,
+            'type'    => 'danger',
         ]);
 
-        $existing = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
-        if (empty($existing)) {
-            return response()->json(['message' => 'Appointment not found'], 404);
-        }
-
+        // Soft delete: mark appointment as Cancelled
         DB::update(
-            "UPDATE appointments SET status = ?, updated_at = NOW() WHERE id = ?",
-            [$validated['status'], $id]
+            "UPDATE appointments SET status = 'Cancelled', updated_at = NOW() WHERE id = ?",
+            [$id]
         );
 
-        $appointment = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
+        $updated = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Appointment updated successfully',
-            'appointment' => $appointment[0]
+            'success'      => true,
+            'message'      => 'Appointment cancelled. User has been notified.',
+            'refund_notice' => $payment
+                ? 'Khalti payment detected. User notified to contact support for refund of Rs. ' . number_format($payment->amount, 2) . '.'
+                : null,
+            'appointment'  => $updated[0],
         ]);
     }
+
+    // Normal status update (Confirmed, Completed, Pending)
+    DB::update(
+        "UPDATE appointments SET status = ?, updated_at = NOW() WHERE id = ?",
+        [$validated['status'], $id]
+    );
+
+    $updated = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
+
+    return response()->json([
+        'success'     => true,
+        'message'     => 'Appointment updated successfully',
+        'appointment' => $updated[0],
+    ]);
+}
 
     public function destroy($id)
     {
@@ -198,7 +246,7 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'Appointment not found'], 404);
         }
 
-        DB::delete("DELETE FROM appointment_services WHERE appointment_id = ?", [$id]);
+        DB::delete("DELETE FROM appointments_services WHERE appointment_id = ?", [$id]);
         DB::delete("DELETE FROM appointments WHERE id = ?", [$id]);
 
         return response()->json([

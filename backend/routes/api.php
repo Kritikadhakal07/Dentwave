@@ -8,6 +8,8 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\TimeSlotController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AvailableSlotController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\NotificationController;
 
 use App\Http\Controllers\UserController;
 
@@ -19,6 +21,9 @@ Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::post('/users/update/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::post('/contact', [ContactController::class, 'store']);
+Route::get('/users/{id}', [UserController::class, 'show']);
+
 
 
 
@@ -50,3 +55,10 @@ Route::delete('/doctors/{id}', [DoctorController::class, 'destroy']);
         // Appointment Management (user can view own, update, delete)
         Route::get('/appointments/user/{userId}', [AppointmentController::class, 'getByUser']);
         Route::post('/appointments', [AppointmentController::class, 'store']);
+
+
+
+Route::get('/notifications/user/{userId}', [NotificationController::class, 'getByUser']);
+Route::get('/notifications/unread-count/{userId}', [NotificationController::class, 'unreadCount']);
+Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markRead']);
+Route::post('/notifications/mark-all-read/{userId}', [NotificationController::class, 'markAllRead']);

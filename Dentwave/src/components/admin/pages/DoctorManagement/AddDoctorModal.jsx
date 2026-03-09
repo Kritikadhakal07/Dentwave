@@ -16,10 +16,19 @@ const AddDoctorModal = ({ show, onClose, onSave }) => {
     setFormData({ ...formData, [name]: value });
   };
 
+  
+
   const handleSubmit = () => {
-    onSave(formData);
-    onClose();
-  };
+  if (formData.experience < 0) {
+    alert("Experience cannot be negative");
+    return;
+  }
+
+  onSave(formData);
+  onClose();
+};
+
+  
 
   return (
     <>
@@ -41,9 +50,19 @@ const AddDoctorModal = ({ show, onClose, onSave }) => {
                 <input name="specialization" value={formData.specialization} onChange={handleChange} className="form-control" />
               </div>
               <div className="mb-3">
-                <label className="form-label">Experience</label>
-                <input name="experience" value={formData.experience} onChange={handleChange} className="form-control" />
-              </div>
+  <label className="form-label">Experience (Years)</label>
+  <input
+    type="number"
+    name="experience"
+    value={formData.experience}
+    onChange={handleChange}
+    className="form-control"
+    min="0"
+  />
+</div>
+              
+
+              
               <div className="mb-3">
                 <label className="form-label">Contact</label>
                 <input name="contact" value={formData.contact} onChange={handleChange} className="form-control" />

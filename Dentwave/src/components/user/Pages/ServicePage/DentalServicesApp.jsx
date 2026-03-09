@@ -3,10 +3,18 @@ import BookingPage from "./BookingPage";
 import ServiceDetailsPage from "./ServiceDetail";
 import ServicesPage from "./Service";
 
-const DentalServicesApp = () => {
-  const [currentPage, setCurrentPage] = useState("services");
+// ✅ appointmentServices state is now managed in App.jsx
+// This component receives it as props so the floating button
+// works on Home, About, Contact — every page.
+
+const DentalServicesApp = ({
+  appointmentServices,
+  onAddService,
+  onRemoveService,
+  onClearServices,
+}) => {
+  const [currentPage, setCurrentPage]         = useState("services");
   const [selectedService, setSelectedService] = useState(null);
-  const [appointmentServices, setAppointmentServices] = useState([]);
 
   const handleLearnMore = (service) => {
     setSelectedService(service);
@@ -14,31 +22,29 @@ const DentalServicesApp = () => {
   };
 
   const handleAddToAppointment = (service) => {
-    if (!appointmentServices.find((s) => s.id === service.id)) {
-      setAppointmentServices([...appointmentServices, service]);
-    }
+    onAddService(service);        // ✅ updates state in App.jsx
     setCurrentPage("booking");
   };
 
   const handleRemoveService = (serviceId) => {
-    setAppointmentServices(appointmentServices.filter((s) => s.id !== serviceId));
+    onRemoveService(serviceId);   // ✅ updates state in App.jsx
     if (appointmentServices.length === 1) {
-      setCurrentPage("services");
+      setCurrentPage("services"); // last service removed → go back
     }
   };
 
   const handleConfirmBooking = () => {
-    setAppointmentServices([]);
+    onClearServices();            // ✅ clears state in App.jsx
     setCurrentPage("services");
   };
 
-  const handleBackToServices = () => {
-    setCurrentPage("services");
-  };
+  const handleBackToServices = () => setCurrentPage("services");
 
   return (
     <>
-      {currentPage === "services" && <ServicesPage onLearnMore={handleLearnMore} />}
+      {currentPage === "services" && (
+        <ServicesPage onLearnMore={handleLearnMore} />
+      )}
 
       {currentPage === "details" && (
         <ServiceDetailsPage

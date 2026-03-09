@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import './header.css';
+import NotificationBell from './NotificationBell.jsx';
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,7 +50,7 @@ function Header() {
         <Link to="/" className="navbar-brand" onClick={closeMenu}>
           <img 
             className="logo" 
-            src="logo.jpg" 
+            src="logo.png" 
             alt="Logo"
             style={{ height: '50px' }}
           />
@@ -109,24 +110,23 @@ function Header() {
 
           {/* Right Section - Auth & CTA */}
           <div className="d-flex align-items-center gap-2">
-            {isAuthenticated() ? (
-              // Logged In User
-              <>
-                <div className="d-flex align-items-center gap-2 px-3 py-2 bg-light rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-                    <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
-                  </svg>
-                  <span className="fw-semibold text-dark">{user?.name}</span>
-                </div>
-                <button 
-                  className="btn btn-outline-danger"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
+          {isAuthenticated() ? (
+  <>
+    {/* Notification Bell — only for logged-in users */}
+    <NotificationBell userId={user?.id} />
+
+    <div className="d-flex align-items-center gap-2 px-3 py-2 bg-light rounded">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+        <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+      </svg>
+      <span className="fw-semibold text-dark">{user?.name}</span>
+    </div>
+    <button className="btn btn-outline-danger" onClick={handleLogout}>
+      Logout
+    </button>
+  </>
+) : (
               // Not Logged In
               <>
                 <Link to="/login" className="btn btn-outline-primary" onClick={closeMenu}>
@@ -138,13 +138,7 @@ function Header() {
               </>
             )}
             
-            <button className="btn btn-primary btn-book d-flex align-items-center gap-2 justify-content-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
-                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
-              </svg>
-              Book Appointment
-            </button>
+            
           </div>
         </div>
       </div>
