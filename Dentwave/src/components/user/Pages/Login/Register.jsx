@@ -30,12 +30,14 @@ const Register = () => {
 
     // Prepare payload for backend
     const payload = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      phone: formData.phone,
-      gender: formData.gender,
-    };
+  name: formData.name,
+  email: formData.email,
+  password: formData.password,
+  password_confirmation: formData.confirmPassword, // ✅ REQUIRED
+  phone: formData.phone,
+  gender: formData.gender,
+};
+
 
     try {
       const res = await fetch("http://127.0.0.1:8000/api/register", {

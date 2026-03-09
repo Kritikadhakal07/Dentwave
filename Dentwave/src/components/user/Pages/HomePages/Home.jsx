@@ -1,11 +1,9 @@
 import React from 'react';
 import './Home.css';
-import Hero from "../../../../assets/Hero.png";
-import { useNavigate } from "react-router-dom";
+import Hero from "../../../../assets/home.gif";
 import ServicesSection from './Services';
 
 const Home = () => {
-   const navigate = useNavigate();
   return (
     <div className="home-wrapper">
       {/* Hero Section */}
@@ -20,13 +18,9 @@ const Home = () => {
             <p className="hero-description">
               Experience comprehensive dental care in a state-of-the-art environment, tailored to meet unique needs.
             </p>
-           <button
-      className="btn btn-primary appointment-btn"
-      onClick={() => navigate("/service")}
-    >
-      Book an Appointment
-    </button>
-            
+            <button className="btn btn-primary appointment-btn">
+              Book an Appointment
+            </button>
           </div>
 
           {/* Right Side */}
@@ -42,8 +36,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Services Section */}
-      <ServicesSection />
+    <ServicesSection/>
 
       {/* Testimonials Section */}
       <div className="container testimonials-section">
@@ -110,12 +103,9 @@ const Home = () => {
           <p className="cta-description">
             Schedule your consultation today and take the first step towards optimal dental health and a dazzling smile.
           </p>
-          <button
-      className="btn btn-primary appointment-btn"
-      onClick={() => navigate("/service")}
-    >
-      Book an Appointment
-    </button>
+          <button className="btn btn-primary cta-btn">
+            Book Your Appointment Now
+          </button>
         </div>
       </div>
     </div>
