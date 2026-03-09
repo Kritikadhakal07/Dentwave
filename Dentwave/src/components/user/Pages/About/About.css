@@ -1,0 +1,331 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap');
+
+.about-page {
+  font-family: 'DM Sans', sans-serif;
+  background: #fff;
+}
+
+/* Hero */
+.about-hero {
+  position: relative;
+  background: linear-gradient(135deg, #0f2443 0%, #1a3a6e 50%, #0f2443 100%);
+  padding: 110px 0 90px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.about-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(74,144,226,0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.about-hero-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #7eb8f7;
+  margin-bottom: 18px;
+}
+
+.about-hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+  margin: 0 auto 24px;
+  max-width: 700px;
+}
+
+.about-hero-subtitle {
+  font-size: 16px;
+  color: rgba(255,255,255,0.65);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.about-hero-line {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #4a90e2, #7eb8f7);
+  margin: 28px auto 0;
+  border-radius: 2px;
+}
+
+/* Story Section */
+.story-section {
+  padding: 100px 0;
+  background: #fff;
+}
+
+.story-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #4a90e2;
+  margin-bottom: 16px;
+}
+
+.story-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(32px, 4vw, 50px);
+  font-weight: 700;
+  color: #0f2443;
+  line-height: 1.2;
+  margin-bottom: 0;
+}
+
+.story-divider {
+  width: 48px;
+  height: 3px;
+  background: #4a90e2;
+  border-radius: 2px;
+  margin: 28px 0;
+}
+
+.story-body {
+  font-size: 15.5px;
+  color: #4b5563;
+  line-height: 1.85;
+  margin-bottom: 20px;
+}
+
+/* Stats Panel */
+.story-visual {
+  position: relative;
+  min-height: 420px;
+}
+
+.story-card-bg {
+  position: absolute;
+  top: 20px;
+  right: -20px;
+  width: 88%;
+  height: 90%;
+  background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+  border-radius: 20px;
+  z-index: 0;
+}
+
+.story-stats-panel {
+  position: relative;
+  z-index: 1;
+  background: #0f2443;
+  border-radius: 20px;
+  padding: 50px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  box-shadow: 0 24px 60px rgba(15,36,67,0.25);
+}
+
+.stat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.stat-icon-wrap {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  background: rgba(74,144,226,0.15);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-wrap svg {
+  width: 24px;
+  height: 24px;
+  color: #7eb8f7;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stat-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.4;
+}
+
+/* Values Strip */
+.values-strip {
+  background: #f0f7ff;
+  padding: 70px 0;
+  border-top: 1px solid #e0ecfb;
+  border-bottom: 1px solid #e0ecfb;
+}
+
+.values-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700;
+  color: #0f2443;
+  margin-bottom: 14px;
+}
+
+.values-sub {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.7;
+  max-width: 440px;
+}
+
+.value-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-radius: 60px;
+  padding: 18px 28px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(74,144,226,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.value-pill:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(74,144,226,0.18);
+}
+
+.value-dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  border-radius: 50%;
+  background: #4a90e2;
+}
+
+.value-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f2443;
+  margin: 0;
+}
+
+/* Facilities */
+.facilities-section {
+  padding: 100px 0;
+  background: #fff;
+}
+
+.section-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #4a90e2;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.section-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 700;
+  color: #0f2443;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.section-sub {
+  font-size: 15px;
+  color: #9ca3af;
+  text-align: center;
+  max-width: 520px;
+  margin: 0 auto 60px;
+  line-height: 1.7;
+}
+
+.facility-card {
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.facility-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.16);
+}
+
+.facility-card img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.facility-card:hover img {
+  transform: scale(1.05);
+}
+
+.facility-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(15,36,67,0.92) 0%, transparent 100%);
+  padding: 50px 28px 28px;
+}
+
+.facility-tag {
+  display: inline-block;
+  background: rgba(74,144,226,0.9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+
+.facility-alt {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.facility-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .story-card-bg { display: none; }
+  .story-visual { min-height: auto; }
+  .story-stats-panel { margin-top: 40px; }
+  .facility-card { margin-bottom: 24px; }
+}
