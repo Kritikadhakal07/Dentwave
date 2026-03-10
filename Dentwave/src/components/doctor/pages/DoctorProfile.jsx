@@ -12,6 +12,7 @@ function DoctorProfilePage() {
   const [doctorName,  setDoctorName]  = useState(() => localStorage.getItem('user_name')  || '');
   const [doctorEmail, setDoctorEmail] = useState(() => localStorage.getItem('user_email') || '');
   const [doctorRole]                  = useState('Doctor');
+  const [loading, setLoading] = useState(true); // ✅ ADD loading state
 
   const [editing, setEditing] = useState(false);
   const [saving,  setSaving]  = useState(false);
@@ -36,49 +37,91 @@ function DoctorProfilePage() {
 
   const [stats, setStats] = useState({ totalAppointments: 0, pending: 0, completed: 0 });
 
-  //  fetch profile 
-  const fetchProfile = useCallback(() => {
-    if (!doctorId) return;
-    fetch(`${API}/doctor/profile/${doctorId}`)
-      .then(r => r.json())
-      .then(doc => {
-        if (!doc || !doc.id) return;
-        setForm({
-          name:           doc.name           || '',
-          specialization: doc.specialization || '',
-          experience:     doc.experience     || '',
-          contact:        doc.contact        || '',
-          status:         doc.status         || 'Active',
-        });
-        setDoctorName(doc.name || '');
-        setDoctorEmail(doc.email || '');
-        localStorage.setItem('user_name',  doc.name  || '');
-        localStorage.setItem('user_email', doc.email || '');
-        setCurrentImage(doc.image ? `${IMG_BASE}${doc.image}` : null);
-      })
-      .catch(() => {});
-  }, [doctorId]);
+  const fetchProfile = useCallback(async () => {
+    // ✅ FIX: Re-read doctorId directly from localStorage in case state wasn't set yet
+    const id = localStorage.getItem('doctor_id');
+    if (!id) {
+      setError('Doctor ID not found. Please log in again.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/doctor/profile/${id}`);
+      
+      // ✅ FIX: Check response status before parsing
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+
+      const doc = await res.json();
+
+      if (!doc || !doc.id) {
+        setError('Profile data not found.');
+        setLoading(false);
+        return;
+      }
+
+      // ✅ FIX: Ensure all fields are set with fallbacks
+      setForm({
+        name:           doc.name           || '',
+        specialization: doc.specialization || '',
+        experience:     String(doc.experience || ''),
+        contact:        String(doc.contact    || ''),
+        status:         doc.status         || 'Active',
+      });
+
+      const name  = doc.name  || '';
+      const email = doc.email || '';
+      setDoctorName(name);
+      setDoctorEmail(email);
+      localStorage.setItem('user_name',  name);
+      localStorage.setItem('user_email', email);
+
+      // ✅ FIX: Handle image path correctly
+      if (doc.image) {
+        // Avoid double slashes
+        const imgUrl = doc.image.startsWith('http')
+          ? doc.image
+          : `${IMG_BASE}${doc.image.startsWith('/') ? doc.image.slice(1) : doc.image}`;
+        setCurrentImage(imgUrl);
+      } else {
+        setCurrentImage(null);
+      }
+
+    } catch (err) {
+      setError(`Failed to load profile: ${err.message}`);
+    } finally {
+      setLoading(false); // ✅ Always stop loading
+    }
+  }, []); // ✅ No dependency on doctorId state — reads from localStorage directly
 
   useEffect(() => {
     fetchProfile();
 
-    if (!doctorId) return;
+    const id = localStorage.getItem('doctor_id');
+    if (!id) return;
+
     fetch(`${API}/appointments`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to fetch appointments');
+        return r.json();
+      })
       .then(data => {
-        const appts = (data.appointments || data || []).filter(
-          a => String(a.doctor_id) === String(doctorId)
-        );
+        const list = Array.isArray(data) ? data : (data.appointments || []);
+        const appts = list.filter(a => String(a.doctor_id) === String(id));
         setStats({
           totalAppointments: appts.length,
           pending:   appts.filter(a => a.status === 'Pending').length,
           completed: appts.filter(a => a.status === 'Completed').length,
         });
       })
-      .catch(() => {});
-  }, [doctorId, fetchProfile]);
+      .catch(err => console.warn('Appointments fetch failed:', err));
+  }, [fetchProfile]);
 
-  const initials = doctorName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const initials = doctorName
+    ? doctorName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -87,7 +130,6 @@ function DoctorProfilePage() {
     setImagePreview(URL.createObjectURL(file));
   };
 
-  // save profile 
   const handleSave = async () => {
     const errs = {};
     if (!form.name.trim())           errs.name           = 'Name is required.';
@@ -96,6 +138,7 @@ function DoctorProfilePage() {
     if (!form.contact.trim())        errs.contact        = 'Contact is required.';
     if (Object.keys(errs).length) { setFormErrors(errs); return; }
 
+    const id = localStorage.getItem('doctor_id');
     setSaving(true); setError(''); setSuccess('');
     try {
       const body = new FormData();
@@ -106,7 +149,7 @@ function DoctorProfilePage() {
       body.append('status',         form.status);
       if (imageFile) body.append('image', imageFile);
 
-      const res  = await fetch(`${API}/doctor/profile/${doctorId}`, {
+      const res  = await fetch(`${API}/doctor/profile/${id}`, {
         method:  'POST',
         headers: { Accept: 'application/json' },
         body,
@@ -114,8 +157,7 @@ function DoctorProfilePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Update failed.');
 
-      // re-fetch to get updated image from server
-      fetchProfile();
+      await fetchProfile();
       setDoctorName(form.name);
       localStorage.setItem('user_name', form.name);
       setImageFile(null);
@@ -132,14 +174,12 @@ function DoctorProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    setForm(f => ({ ...f, name: doctorName }));
     setFormErrors({});
     setImageFile(null);
     setImagePreview(null);
     setEditing(false);
   };
 
-  // ── change password ───────────────────────────────────────────────
   const handleChangePassword = async () => {
     const errs = {};
     if (!pwdForm.password)                errs.password = 'New password is required.';
@@ -174,6 +214,19 @@ function DoctorProfilePage() {
 
   const avatarSrc = imagePreview || currentImage;
 
+  // ✅ Show loading spinner while fetching
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 40, height: 40, border: '3px solid #e5e7eb', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin-p 0.7s linear infinite', margin: '0 auto 12px' }}/>
+          <p style={{ color: '#6b7280', fontSize: 14 }}>Loading profile…</p>
+        </div>
+        <style>{`@keyframes spin-p { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '28px 32px', background: '#f8fafc', minHeight: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
@@ -181,13 +234,11 @@ function DoctorProfilePage() {
         @keyframes spin-p { to { transform: rotate(360deg); } }
       `}</style>
 
-      {/* Page title */}
       <div style={{ marginBottom: 28 }}>
         <h2 style={{ fontWeight: 800, fontSize: 24, color: '#111827', marginBottom: 4 }}>My Profile</h2>
         <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 0 }}>Manage your account information and security settings.</p>
       </div>
 
-      {/* Banners */}
       {success && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '11px 16px', marginBottom: 20, fontSize: 13, color: '#15803d' }}>
           <CheckCircle size={15}/> {success}
@@ -204,10 +255,7 @@ function DoctorProfilePage() {
 
         {/* ── Left ─────────────────────────────────────────────── */}
         <div>
-          {/* Avatar card */}
           <div style={{ background: '#fff', borderRadius: 16, padding: '32px 24px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)', marginBottom: 16 }}>
-
-            {/* Avatar with upload */}
             <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
               {avatarSrc ? (
                 <img src={avatarSrc} alt={doctorName}
@@ -231,7 +279,6 @@ function DoctorProfilePage() {
             </div>
           </div>
 
-          {/* Stats */}
           <div style={{ background: '#fff', borderRadius: 16, padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)' }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 14 }}>My Appointments</p>
             {[
@@ -251,7 +298,6 @@ function DoctorProfilePage() {
         {/* ── Right ────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          {/* Professional info */}
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
             <div style={{ padding: '18px 24px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -299,7 +345,6 @@ function DoctorProfilePage() {
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  {/* Name */}
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Full Name *</label>
                     <input value={form.name}
@@ -307,7 +352,6 @@ function DoctorProfilePage() {
                       style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: `1.5px solid ${formErrors.name ? '#ef4444' : '#e5e7eb'}`, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}/>
                     {formErrors.name && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>{formErrors.name}</p>}
                   </div>
-                  {/* Specialization */}
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Specialization *</label>
                     <input value={form.specialization}
@@ -315,7 +359,6 @@ function DoctorProfilePage() {
                       style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: `1.5px solid ${formErrors.specialization ? '#ef4444' : '#e5e7eb'}`, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}/>
                     {formErrors.specialization && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>{formErrors.specialization}</p>}
                   </div>
-                  {/* Experience */}
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Experience *</label>
                     <input value={form.experience} placeholder="e.g. 5 Years"
@@ -323,7 +366,6 @@ function DoctorProfilePage() {
                       style={{ width: '100%', padding: '9px 12px', borderRadius: 9, border: `1.5px solid ${formErrors.experience ? '#ef4444' : '#e5e7eb'}`, fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}/>
                     {formErrors.experience && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>{formErrors.experience}</p>}
                   </div>
-                  {/* Contact */}
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Contact *</label>
                     <input value={form.contact}
