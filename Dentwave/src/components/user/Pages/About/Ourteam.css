@@ -1,0 +1,114 @@
+/* Team Section */
+.team-section {
+  padding: 100px 0;
+  background: #f8faff;
+  border-top: 1px solid #e0ecfb;
+}
+
+.team-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #4a90e2;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.team-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 700;
+  color: #0f2443;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.team-sub {
+  font-size: 15px;
+  color: #9ca3af;
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto 64px;
+  line-height: 1.7;
+}
+
+/* Member Card */
+.member-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 24px 28px;
+  text-align: center;
+  border: 1px solid #f0f4ff;
+  box-shadow: 0 4px 20px rgba(15, 36, 67, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.member-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(15, 36, 67, 0.12);
+}
+
+.member-avatar-wrap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 20px;
+}
+
+.member-avatar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a90e2, #7eb8f7);
+  z-index: 0;
+}
+
+.member-avatar-wrap img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+}
+
+.member-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f2443;
+  margin-bottom: 4px;
+}
+
+.member-role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #4a90e2;
+  background: #eff6ff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+.member-desc {
+  font-size: 13.5px;
+  color: #6b7280;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.member-divider {
+  width: 30px;
+  height: 2px;
+  background: #dbeafe;
+  border-radius: 2px;
+  margin: 14px auto;
+}

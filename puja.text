@@ -1,0 +1,5 @@
+   'name' => 'New Admin',
+.     'email' => 'newadmin@dentwave.com',
+.     'password' => Hash::make('Admin123@'),
+.     'role' => 'admin',
+.     'status' => 'Active'
