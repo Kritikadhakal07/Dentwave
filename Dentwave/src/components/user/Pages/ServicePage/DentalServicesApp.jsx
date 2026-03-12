@@ -3,9 +3,6 @@ import BookingPage from "./BookingPage";
 import ServiceDetailsPage from "./ServiceDetail";
 import ServicesPage from "./Service";
 
-// ✅ appointmentServices state is now managed in App.jsx
-// This component receives it as props so the floating button
-// works on Home, About, Contact — every page.
 
 const DentalServicesApp = ({
   appointmentServices,
@@ -22,7 +19,7 @@ const DentalServicesApp = ({
   };
 
   const handleAddToAppointment = (service) => {
-    onAddService(service);        // ✅ updates state in App.jsx
+    onAddService(service);       
     setCurrentPage("booking");
   };
 

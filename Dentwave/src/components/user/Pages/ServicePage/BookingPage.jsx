@@ -1,10 +1,503 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, DollarSign, Calendar, CreditCard, Check, AlertCircle, ChevronLeft, User, Shield } from 'lucide-react';
+import { Clock, DollarSign, Calendar, Check, AlertCircle, ChevronLeft, User, Shield } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────
-// PaymentStatus — shown when Khalti redirects back to the app
-// Reads ?reason= or ?appointment_id= from the URL
-// Route: /payment/success  or  /payment/failed
+// Injected CSS
+// ─────────────────────────────────────────────────────────────
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:wght@500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:       #18181b;
+    --ink-2:     #52525b;
+    --ink-3:     #a1a1aa;
+    --surface:   #ffffff;
+    --base:      #f4f3ef;
+    --border:    #e4e4e7;
+    --accent:    #2563eb;
+    --accent-lt: #eff4ff;
+    --accent-dk: #1d4ed8;
+    --success:   #16a34a;
+    --warn-bg:   #fefce8;
+    --warn-bd:   #fde047;
+    --warn-tx:   #713f12;
+    --khalti:    #5C2D91;
+    --khalti-lt: #f5f0ff;
+    --err:       #dc2626;
+    --err-bg:    #fef2f2;
+    --err-bd:    #fecaca;
+    --radius:    14px;
+    --shadow:    0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.07);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,.04), 0 20px 48px rgba(0,0,0,.10);
+    --font-body: 'Sora', sans-serif;
+    --font-disp: 'Lora', serif;
+  }
+
+  .bk-page {
+    min-height: 100vh;
+    background: var(--base);
+    padding: 40px 16px 72px;
+    font-family: var(--font-body);
+  }
+
+  .bk-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* ── Back button ── */
+  .bk-back {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding: 6px 0;
+    transition: gap 0.15s;
+  }
+  .bk-back:hover { gap: 8px; }
+
+  /* ── Card ── */
+  .bk-card {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 36px 32px;
+    animation: fadeUp .35s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .bk-title {
+    font-family: var(--font-disp);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  /* ── Stepper ── */
+  .bk-stepper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .bk-step-dot {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all .3s;
+  }
+  .bk-step-dot.done   { background: var(--accent); color: #fff; }
+  .bk-step-dot.active { background: var(--accent); color: #fff; box-shadow: 0 0 0 4px var(--accent-lt); }
+  .bk-step-dot.idle   { background: var(--border); color: var(--ink-3); }
+
+  .bk-step-line {
+    flex: 1;
+    height: 3px;
+    margin: 0 6px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bk-step-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width .45s ease;
+  }
+
+  .bk-step-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .bk-step-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .4px;
+    transition: color .3s;
+  }
+  .bk-step-label.active { font-weight: 700; color: var(--accent); }
+  .bk-step-label.idle   { color: var(--ink-3); }
+
+  /* ── Error ── */
+  .bk-error {
+    background: var(--err-bg);
+    border: 1px solid var(--err-bd);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    color: var(--err);
+    font-size: 13px;
+    animation: shake .3s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-4px); }
+    75%      { transform: translateX(4px); }
+  }
+
+  /* ── Form label / input ── */
+  .bk-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 8px;
+  }
+
+  .bk-input, .bk-select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .bk-input:focus, .bk-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-lt);
+  }
+
+  .bk-hint {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 6px;
+  }
+
+  .bk-field { margin-bottom: 20px; }
+
+  /* ── Select wrapper (arrow) ── */
+  .bk-select-wrap {
+    position: relative;
+  }
+  .bk-select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-3);
+    pointer-events: none;
+    font-size: 13px;
+  }
+
+  /* ── Service card ── */
+  .bk-svc {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color .15s;
+  }
+  .bk-svc:hover { border-color: #c4b5fd; }
+
+  .bk-svc-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+
+  .bk-svc-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--ink-3);
+    flex-wrap: wrap;
+  }
+
+  .bk-svc-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .bk-rm-btn {
+    background: none;
+    border: none;
+    color: var(--err);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    padding: 5px 10px;
+    border-radius: 6px;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .bk-rm-btn:hover { background: var(--err-bg); }
+
+  .bk-totals {
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bk-total-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .bk-add-more {
+    margin-top: 16px;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1.5px dashed var(--accent);
+    background: none;
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background .15s;
+  }
+  .bk-add-more:hover { background: var(--accent-lt); }
+
+  /* ── Info box ── */
+  .bk-info {
+    border-radius: 10px;
+    padding: 13px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 13px;
+  }
+  .bk-info.info { background: var(--accent-lt); border: 1px solid #bfdbfe; color: var(--accent-dk); }
+  .bk-info.warn { background: var(--warn-bg); border: 1px solid var(--warn-bd); color: var(--warn-tx); }
+
+  /* ── Spinner ── */
+  .bk-spin-wrap { text-align: center; padding: 32px 0; color: var(--ink-3); font-size: 13px; }
+  .bk-spin {
+    width: 28px; height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 0 auto 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Slot groups ── */
+  .bk-slot-group { margin-bottom: 18px; }
+  .bk-slot-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-3);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bk-slot-group-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .bk-slot-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .bk-slot {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .15s;
+  }
+  .bk-slot:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+  .bk-slot.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+  /* ── Payment cards ── */
+  .bk-pay-card {
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: #fafafa;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all .2s;
+  }
+  .bk-pay-card:hover { border-color: var(--accent); background: var(--accent-lt); }
+  .bk-pay-card.active { border-color: var(--accent); background: var(--accent-lt); }
+  .bk-pay-card.khalti:hover { border-color: var(--khalti); background: var(--khalti-lt); }
+  .bk-pay-card.khalti.active { border-color: var(--khalti); background: var(--khalti-lt); }
+
+  .bk-pay-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .bk-pay-name { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 2px; }
+  .bk-pay-desc { font-size: 12px; color: var(--ink-3); }
+
+  .bk-pay-check { margin-left: auto; flex-shrink: 0; }
+
+  /* ── Summary box ── */
+  .bk-sum {
+    background: var(--base);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-top: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .bk-sum-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bk-sum-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bk-sum-row:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+
+  .bk-sum-key { color: var(--ink-3); }
+  .bk-sum-val { font-weight: 600; color: var(--ink); text-align: right; max-width: 60%; }
+
+  .bk-sum-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    margin-top: 10px;
+    border-top: 2px solid var(--border);
+  }
+
+  /* ── Nav buttons ── */
+  .bk-nav { display: flex; gap: 10px; margin-top: 28px; }
+
+  .bk-btn-sec {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .bk-btn-sec:hover { border-color: var(--ink-2); color: var(--ink); }
+
+  .bk-btn-pri {
+    flex: 2;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .bk-btn-pri:hover:not(:disabled) { background: var(--accent-dk); transform: translateY(-1px); }
+  .bk-btn-pri:active:not(:disabled) { transform: translateY(0); }
+  .bk-btn-pri:disabled { background: var(--border); color: var(--ink-3); cursor: not-allowed; }
+  .bk-btn-pri.khalti { background: var(--khalti); }
+  .bk-btn-pri.khalti:hover:not(:disabled) { background: #4a236f; }
+
+  /* ── Empty / no-services ── */
+  .bk-empty {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--ink-3);
+    font-size: 14px;
+  }
+  .bk-empty-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .bk-card { padding: 24px 18px; }
+    .bk-title { font-size: 22px; }
+    .bk-nav { flex-direction: column-reverse; }
+    .bk-btn-sec, .bk-btn-pri { flex: none; width: 100%; }
+    .bk-totals { flex-direction: column; align-items: flex-start; }
+    .bk-svc { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .bk-rm-btn { align-self: flex-end; }
+    .bk-sum-val { max-width: 55%; }
+  }
+
+  @media (max-width: 400px) {
+    .bk-page { padding: 24px 12px 60px; }
+    .bk-slot { font-size: 12px; padding: 7px 11px; }
+    .bk-step-dot { width: 28px; height: 28px; font-size: 11px; }
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────
+// PaymentStatus
 // ─────────────────────────────────────────────────────────────
 export const PaymentStatus = ({ onGoHome }) => {
   const params        = new URLSearchParams(window.location.search);
@@ -24,31 +517,35 @@ export const PaymentStatus = ({ onGoHome }) => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f4f6fb', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.07)', padding: '48px 40px', textAlign: 'center', maxWidth: 420, width: '100%' }}>
-        <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '' : ''}</div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e', marginBottom: 10 }}>
-          {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
-        </h2>
-        <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
-          {isSuccess
-            ? `Your appointment #${appointmentId} has been confirmed. You'll receive a confirmation shortly.`
-            : (reasonMap[reason] || 'Something went wrong with your payment.')}
-        </p>
-        <button
-          onClick={onGoHome}
-          style={{ padding: '13px 32px', borderRadius: 12, border: 'none', background: isSuccess ? '#4f6ef7' : '#e74c3c', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 15 }}
-        >
-          {isSuccess ? 'View Appointments' : 'Try Again'}
-        </button>
+    <>
+      <style>{CSS}</style>
+      <div className="bk-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', padding: '52px 40px', textAlign: 'center', maxWidth: 420, width: '100%', animation: 'fadeUp .35s ease' }}>
+          <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '🎉' : '😕'}</div>
+          <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 700, color: '#18181b', marginBottom: 10 }}>
+            {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
+          </h2>
+          <p style={{ color: '#71717a', fontSize: 14, lineHeight: 1.6, marginBottom: 28 }}>
+            {isSuccess
+              ? `Your appointment #${appointmentId} is confirmed. You'll receive a confirmation shortly.`
+              : (reasonMap[reason] || 'Something went wrong with your payment.')}
+          </p>
+          <button
+            onClick={onGoHome}
+            className={`bk-btn-pri${isSuccess ? '' : ''}`}
+            style={{ width: '100%', background: isSuccess ? '#2563eb' : '#dc2626' }}
+          >
+            {isSuccess ? 'View Appointments' : 'Try Again'}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
 
 // ─────────────────────────────────────────────────────────────
-// BookingPage — main booking flow with Khalti integration
+// BookingPage
 // ─────────────────────────────────────────────────────────────
 const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) => {
   const [step, setStep]                     = useState(1);
@@ -64,7 +561,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
   const totalCost     = selectedServices.reduce((sum, s) => sum + parseFloat(s.cost || 0), 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + parseInt(s.duration || 0), 0);
 
-  // ── Fetch active doctors once on mount ────────────────────────────
   useEffect(() => {
     fetch('http://127.0.0.1:8000/api/doctors')
       .then(r => r.json())
@@ -76,7 +572,6 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
       .catch(() => setError('Failed to load doctors. Please try again.'));
   }, []);
 
-  // ── Re-fetch slots when doctor, date, or services change ──────────
   useEffect(() => {
     if (selectedDoctor && selectedDate && selectedServices.length > 0) {
       fetchAvailableSlots();
@@ -101,13 +596,8 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
         }),
       });
       const data = await res.json();
-      if (data.success) {
-       
-        setAvailableSlots(data.available_slots);
-      } else {
-        setError(data.message || 'No slots available.');
-        setAvailableSlots([]);
-      }
+      if (data.success) setAvailableSlots(data.available_slots);
+      else { setError(data.message || 'No slots available.'); setAvailableSlots([]); }
     } catch {
       setError('Failed to load time slots. Please try again.');
       setAvailableSlots([]);
@@ -116,28 +606,16 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     }
   };
 
-  // ── Group slots into Morning / Afternoon / Evening ────────────────
-  // const groupedSlots = () => {
-  //   const groups = { ' Morning': [], 'Afternoon': [], ' Evening': [] };
-  //   availableSlots.forEach(slot => {
-  //     const hour = parseInt(slot.start_time.split(':')[0]);
-  //     if (hour < 12)      groups['Morning'].push(slot);
-  //     else if (hour < 17) groups['Afternoon'].push(slot);
-  //     else                groups['Evening'].push(slot);
-  //   });
-  //   return groups;
-  // };
-
   const groupedSlots = () => {
-  const groups = { Morning: [], Afternoon: [], Evening: [] };
-  availableSlots.forEach(slot => {
-    const hour = parseInt(slot.start_time.split(':')[0]);
-    if (hour < 12)      groups.Morning.push(slot);
-    else if (hour < 17) groups.Afternoon.push(slot);
-    else                groups.Evening.push(slot);
-  });
-  return groups;
-};
+    const groups = { Morning: [], Afternoon: [], Evening: [] };
+    availableSlots.forEach(slot => {
+      const hour = parseInt(slot.start_time.split(':')[0]);
+      if (hour < 12)      groups.Morning.push(slot);
+      else if (hour < 17) groups.Afternoon.push(slot);
+      else                groups.Evening.push(slot);
+    });
+    return groups;
+  };
 
   const formatDate = (d) => {
     if (!d) return '';
@@ -159,11 +637,9 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     }
   };
 
-  // ── Create appointment then handle payment method ─────────────────
   const handleConfirmAppointment = async () => {
     setError('');
     if (!paymentMethod) { setError('Please select a payment method.'); return; }
-
     setLoading(true);
     try {
       const userId = localStorage.getItem('user_id') || 1;
@@ -181,24 +657,15 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
           service_ids:      selectedServices.map(s => parseInt(s.id)),
         }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to create appointment.');
-
       const appointmentId = data.appointment?.id || data.id;
-
       if (paymentMethod === 'khalti') {
-        // ── Redirect to Laravel Khalti initiation route ──────────
-        // The backend will call Khalti API and redirect to Khalti payment page
         window.location.href = `http://127.0.0.1:8000/khalti/initiate/${appointmentId}`;
-        // No need to call onConfirm() — the page will navigate away
         return;
       }
-
-      // Cash / Insurance — no online payment needed
       alert('🎉 Appointment confirmed successfully!');
       onConfirm();
-
     } catch (err) {
       setError(err.message || 'Failed to create appointment.');
     } finally {
@@ -206,319 +673,282 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     }
   };
 
-  const selectedDoctorObj  = doctors.find(d => d.id == selectedDoctor);
-  const primaryDisabled    = loading || (step === 1 && selectedServices.length === 0);
+  const selectedDoctorObj = doctors.find(d => d.id == selectedDoctor);
+  const primaryDisabled   = loading || (step === 1 && selectedServices.length === 0);
+  const stepLabels        = ['Services', 'Doctor & Time', 'Payment'];
 
-  // ── Styles ────────────────────────────────────────────────────────
-  const S = {
-    page:    { minHeight: '100vh', background: '#f4f6fb', padding: '40px 16px' },
-    wrap:    { maxWidth: 660, margin: '0 auto' },
-    backBtn: { background: 'none', border: 'none', color: '#4f6ef7', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 20, fontWeight: 600, fontSize: 14, padding: 0 },
-    card:    { background: '#fff', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.07)', padding: '36px 32px' },
-    title:   { fontSize: 22, fontWeight: 700, color: '#1a1a2e', textAlign: 'center', marginBottom: 28 },
-
-    stepDot:   (n) => ({ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0, background: step >= n ? '#4f6ef7' : '#eaecf0', color: step >= n ? '#fff' : '#aaa', transition: 'all 0.3s' }),
-    stepLine:  { flex: 1, height: 3, margin: '0 6px', background: '#eaecf0', borderRadius: 4, overflow: 'hidden' },
-    stepFill:  (n) => ({ height: '100%', width: step > n ? '100%' : '0%', background: '#4f6ef7', transition: 'width 0.4s' }),
-    stepLabel: (n) => ({ fontSize: 12, fontWeight: step === n ? 700 : 400, color: step === n ? '#4f6ef7' : '#bbb' }),
-
-    errBox:  { background: '#fff5f5', border: '1px solid #fcc', borderRadius: 10, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 20, color: '#c0392b', fontSize: 14 },
-
-    label:   { display: 'block', fontWeight: 600, fontSize: 13, color: '#444', marginBottom: 8 },
-    input:   { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1.5px solid #e0e0e0', fontSize: 14, outline: 'none', color: '#333', boxSizing: 'border-box', background: '#fff' },
-    hint:    { fontSize: 12, color: '#aaa', marginTop: 5 },
-
-    svcCard: { border: '1px solid #eee', borderRadius: 12, padding: '14px 16px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    svcMeta: { display: 'flex', gap: 14, marginTop: 5, fontSize: 12, color: '#999', alignItems: 'center' },
-    rmBtn:   { background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 },
-
-    totals:  { borderTop: '1px solid #f0f0f0', marginTop: 16, paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-
-    infoBox: (type) => {
-      const map = { info: ['#f0f4ff','#d0d8ff','#4f6ef7'], warn: ['#fffbea','#ffe082','#7a5c00'] };
-      const [bg, bd, cl] = map[type];
-      return { background: bg, border: `1px solid ${bd}`, borderRadius: 10, padding: '13px 16px', fontSize: 13, color: cl, display: 'flex', alignItems: 'flex-start', gap: 10 };
-    },
-
-    spin:    { width: 30, height: 30, border: '3px solid #eee', borderTopColor: '#4f6ef7', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' },
-
-    slotGroup: { marginBottom: 18 },
-    slotLbl:   { fontSize: 11, fontWeight: 700, color: '#bbb', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 },
-    slotWrap:  { display: 'flex', flexWrap: 'wrap', gap: 8 },
-    slotBtn:   (active) => ({ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#4f6ef7' : '#ddd'}`, background: active ? '#4f6ef7' : '#fff', color: active ? '#fff' : '#444', cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.15s' }),
-
-    payCard: (active) => ({ padding: '15px 18px', borderRadius: 12, border: `2px solid ${active ? '#4f6ef7' : '#eee'}`, background: active ? '#f5f7ff' : '#fafafa', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s' }),
-
-    khaltiCard: (active) => ({ padding: '15px 18px', borderRadius: 12, border: `2px solid ${active ? '#5C2D91' : '#eee'}`, background: active ? '#f5f0ff' : '#fafafa', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s' }),
-
-    sumBox: { background: '#f8f9ff', borderRadius: 14, padding: '20px 22px', marginTop: 20 },
-    sumRow: { display: 'flex', justifyContent: 'space-between', fontSize: 13, paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #eee' },
-
-    navRow:  { display: 'flex', gap: 12, marginTop: 28 },
-    secBtn:  { flex: 1, padding: '13px', borderRadius: 12, border: '1.5px solid #ddd', background: '#fff', color: '#444', fontWeight: 600, cursor: 'pointer', fontSize: 14 },
-    priBtn:  (dis) => ({ flex: 2, padding: '13px', borderRadius: 12, border: 'none', background: dis ? '#c5c5c5' : '#4f6ef7', color: '#fff', fontWeight: 700, cursor: dis ? 'not-allowed' : 'pointer', fontSize: 14, transition: 'background 0.2s' }),
+  const stepDotClass = (n) => {
+    if (step > n)  return 'bk-step-dot done';
+    if (step === n) return 'bk-step-dot active';
+    return 'bk-step-dot idle';
   };
 
   return (
-    <div style={S.page}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <div style={S.wrap}>
+    <>
+      <style>{CSS}</style>
+      <div className="bk-page">
+        <div className="bk-wrap">
 
-        <button style={S.backBtn} onClick={onBack}>
-          <ChevronLeft size={17}/> Back to Services
-        </button>
+          <button className="bk-back" onClick={onBack}>
+            <ChevronLeft size={16}/> Back to Services
+          </button>
 
-        <div style={S.card}>
-          <h1 style={S.title}>Book Appointment</h1>
+          <div className="bk-card">
+            <h1 className="bk-title">Book Appointment</h1>
 
-          {/* ── Stepper ─────────────────────────────────── */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-            <div style={S.stepDot(1)}>{step > 1 ? <Check size={15}/> : '1'}</div>
-            <div style={S.stepLine}><div style={S.stepFill(1)}/></div>
-            <div style={S.stepDot(2)}>{step > 2 ? <Check size={15}/> : '2'}</div>
-            <div style={S.stepLine}><div style={S.stepFill(2)}/></div>
-            <div style={S.stepDot(3)}>3</div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
-            {['Services', 'Doctor & Time', 'Payment'].map((l, i) => (
-              <span key={i} style={S.stepLabel(i + 1)}>{l}</span>
-            ))}
-          </div>
-
-          {/* ── Error ───────────────────────────────────── */}
-          {error && (
-            <div style={S.errBox}>
-              <AlertCircle size={17} style={{ flexShrink: 0, marginTop: 1 }}/> {error}
+            {/* Stepper */}
+            <div className="bk-stepper">
+              <div className={stepDotClass(1)}>{step > 1 ? <Check size={14}/> : '1'}</div>
+              <div className="bk-step-line"><div className="bk-step-fill" style={{ width: step > 1 ? '100%' : '0%' }}/></div>
+              <div className={stepDotClass(2)}>{step > 2 ? <Check size={14}/> : '2'}</div>
+              <div className="bk-step-line"><div className="bk-step-fill" style={{ width: step > 2 ? '100%' : '0%' }}/></div>
+              <div className={stepDotClass(3)}>3</div>
             </div>
-          )}
-
-          {/* ════════════════════════════════════════════
-              STEP 1 — Services
-          ════════════════════════════════════════════ */}
-          {step === 1 && (
-            <div>
-              <p style={{ color: '#888', fontSize: 13, marginBottom: 18 }}>Review your selected services before continuing.</p>
-
-              {selectedServices.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#bbb', fontSize: 14 }}>
-                  No services selected. Go back to add services.
-                </div>
-              ) : selectedServices.map(s => (
-                <div key={s.id} style={S.svcCard}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{s.name}</p>
-                    <div style={S.svcMeta}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11}/> {s.duration} min</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}><DollarSign size={11}/> Rs. {parseFloat(s.cost).toFixed(2)}</span>
-                    </div>
-                  </div>
-                  <button style={S.rmBtn} onClick={() => onRemoveService(s.id)}>Remove</button>
-                </div>
+            <div className="bk-step-labels">
+              {stepLabels.map((l, i) => (
+                <span key={i} className={`bk-step-label ${step === i + 1 ? 'active' : 'idle'}`}>{l}</span>
               ))}
-
-              <div style={S.totals}>
-                <span style={{ fontSize: 13, color: '#888' }}>
-                  Duration: <strong style={{ color: '#333' }}>{totalDuration} min</strong>
-                  <span style={{ color: '#bbb', fontSize: 12 }}> +5 buffer</span>
-                </span>
-                <span style={{ fontSize: 20, fontWeight: 800, color: '#4f6ef7' }}>Rs. {totalCost.toFixed(2)}</span>
-              </div>
-
-              <button
-                onClick={onBack}
-                style={{ marginTop: 18, width: '100%', padding: '11px', borderRadius: 10, border: '1.5px dashed #4f6ef7', background: 'none', color: '#4f6ef7', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
-              >
-                + Add More Services
-              </button>
             </div>
-          )}
 
-          {/* ════════════════════════════════════════════
-              STEP 2 — Doctor, Date & Time
-          ════════════════════════════════════════════ */}
-          {step === 2 && (
-            <div>
-              <div style={{ marginBottom: 18 }}>
-                <label style={S.label}>
-                  <User size={12} style={{ marginRight: 5, verticalAlign: 'middle' }}/> Select Doctor
-                </label>
-                <select
-                  value={selectedDoctor}
-                  onChange={e => { setSelectedDoctor(e.target.value); setSelectedTime(''); setError(''); }}
-                  style={S.input}
-                >
-                  <option value="">Choose a doctor...</option>
-                  {doctors.map(d => (
-                    <option key={d.id} value={d.id}>{d.name} — {d.specialization}</option>
-                  ))}
-                </select>
+            {/* Error */}
+            {error && (
+              <div className="bk-error">
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }}/> {error}
               </div>
+            )}
 
-              <div style={{ marginBottom: 18 }}>
-                <label style={S.label}>
-                  <Calendar size={12} style={{ marginRight: 5, verticalAlign: 'middle' }}/> Select Date
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={e => { setSelectedDate(e.target.value); setSelectedTime(''); setError(''); }}
-                  style={S.input}
-                />
-                {selectedDate && <p style={S.hint}>📅 {formatDate(selectedDate)}</p>}
-              </div>
+            {/* ── STEP 1: Services ── */}
+            {step === 1 && (
+              <div>
+                <p style={{ color: '#71717a', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
+                  Review your selected services before continuing.
+                </p>
 
-              {(!selectedDoctor || !selectedDate) && (
-                <div style={S.infoBox('info')}>
-                  <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }}/>
-                  Select a doctor and date to see available time slots.
-                </div>
-              )}
-
-              {loading && (
-                <div style={{ textAlign: 'center', padding: '28px 0', color: '#bbb', fontSize: 13 }}>
-                  <div style={S.spin}/>
-                  Finding available slots…
-                </div>
-              )}
-
-              {!loading && availableSlots.length > 0 && (
-                <div>
-                  <label style={{ ...S.label, marginBottom: 14 }}>
-                    <Clock size={12} style={{ marginRight: 5, verticalAlign: 'middle' }}/>
-                    Available Time Slots
-                    <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: '#bbb' }}>
-                      {totalDuration} min each
-                    </span>
-                  </label>
-                  {Object.entries(groupedSlots()).map(([label, slots]) =>
-                    slots.length === 0 ? null : (
-                      <div key={label} style={S.slotGroup}>
-                        <p style={S.slotLbl}>{label}</p>
-                        <div style={S.slotWrap}>
-                          {slots.map((slot, i) => (
-                            <button
-                              key={i}
-                              onClick={() => { setSelectedTime(slot.start_time); setError(''); }}
-                              style={S.slotBtn(selectedTime === slot.start_time)}
-                            >
-                              {slot.start_time} – {slot.end_time}
-                            </button>
-                          ))}
-                        </div>
+                {selectedServices.length === 0 ? (
+                  <div className="bk-empty">
+                    <span className="bk-empty-icon">🦷</span>
+                    No services selected. Go back to add services.
+                  </div>
+                ) : selectedServices.map(s => (
+                  <div key={s.id} className="bk-svc">
+                    <div>
+                      <p className="bk-svc-name">{s.name}</p>
+                      <div className="bk-svc-meta">
+                        <span><Clock size={11}/> {s.duration} min</span>
+                        <span><DollarSign size={11}/> Rs. {parseFloat(s.cost).toFixed(2)}</span>
                       </div>
-                    )
-                  )}
-                </div>
-              )}
-
-              {!loading && selectedDoctor && selectedDate && availableSlots.length === 0 && !error && (
-                <div style={S.infoBox('warn')}>
-                  <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }}/>
-                  <div><strong>No slots available</strong> — try a different date or doctor.</div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ════════════════════════════════════════════
-              STEP 3 — Payment
-          ════════════════════════════════════════════ */}
-          {step === 3 && (
-            <div>
-              <p style={{ color: '#888', fontSize: 13, marginBottom: 18 }}>Choose your preferred payment method.</p>
-
-              {/* ── Khalti (online) ── */}
-              <div
-                style={S.khaltiCard(paymentMethod === 'khalti')}
-                onClick={() => { setPaymentMethod('khalti'); setError(''); }}
-              >
-                {/* Khalti purple logo icon (SVG inline) */}
-                <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-                  <rect width="40" height="40" rx="8" fill="#5C2D91"/>
-                  <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="18" fill="white" fontWeight="bold">K</text>
-                </svg>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#5C2D91' }}>Pay with Khalti</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>Secure online payment via Khalti wallet</p>
-                </div>
-                {paymentMethod === 'khalti' && <Check size={17} color="#5C2D91"/>}
-              </div>
-
-              {/* ── Pay at Clinic ── */}
-              <div style={S.payCard(paymentMethod === 'cash')} onClick={() => { setPaymentMethod('cash'); setError(''); }}>
-                <DollarSign size={22} color="#27ae60"/>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>Pay at Clinic</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>Pay in cash when you arrive</p>
-                </div>
-                {paymentMethod === 'cash' && <Check size={17} color="#4f6ef7"/>}
-              </div>
-
-              {/* ── Insurance ── */}
-              <div style={S.payCard(paymentMethod === 'insurance')} onClick={() => { setPaymentMethod('insurance'); setError(''); }}>
-                <Shield size={22} color="#e67e22"/>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>Insurance</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>Use your health coverage</p>
-                </div>
-                {paymentMethod === 'insurance' && <Check size={17} color="#4f6ef7"/>}
-              </div>
-
-              {/* Khalti info note */}
-              {paymentMethod === 'khalti' && (
-                <div style={{ ...S.infoBox('info'), marginTop: 6, marginBottom: 4 }}>
-                  <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }}/>
-                  <span>You'll be redirected to Khalti to complete payment. Make sure you have sufficient balance.</span>
-                </div>
-              )}
-
-              {/* Summary */}
-              <div style={S.sumBox}>
-                <p style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 14 }}>📋 Booking Summary</p>
-                {[
-                  ['Services', `${selectedServices.length} service(s)`],
-                  ['Doctor',   selectedDoctorObj?.name || '—'],
-                  ['Date',     formatDate(selectedDate)],
-                  ['Time',     selectedTime ? `${selectedTime} (${totalDuration} min)` : '—'],
-                  ['Payment',  paymentMethod === 'khalti' ? 'Khalti' : paymentMethod ? paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1) : '—'],
-                ].map(([k, v]) => (
-                  <div key={k} style={S.sumRow}>
-                    <span style={{ color: '#aaa' }}>{k}</span>
-                    <span style={{ fontWeight: 600, color: '#333' }}>{v}</span>
+                    </div>
+                    <button className="bk-rm-btn" onClick={() => onRemoveService(s.id)}>Remove</button>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 4 }}>
-                  <span style={{ fontWeight: 700, fontSize: 15 }}>Total</span>
-                  <span style={{ fontWeight: 800, fontSize: 20, color: '#4f6ef7' }}>Rs. {totalCost.toFixed(2)}</span>
+
+                <div className="bk-totals">
+                  <span style={{ fontSize: 13, color: '#71717a' }}>
+                    Est. duration: <strong style={{ color: '#18181b' }}>{totalDuration} min</strong>
+                    <span style={{ color: '#a1a1aa', fontSize: 12 }}> +5 min buffer</span>
+                  </span>
+                  <span className="bk-total-price">Rs. {totalCost.toFixed(2)}</span>
+                </div>
+
+                <button className="bk-add-more" onClick={onBack}>+ Add More Services</button>
+              </div>
+            )}
+
+            {/* ── STEP 2: Doctor & Time ── */}
+            {step === 2 && (
+              <div>
+                <div className="bk-field">
+                  <label className="bk-label">
+                    <User size={12}/> Select Doctor
+                  </label>
+                  <div className="bk-select-wrap">
+                    <select
+                      className="bk-select"
+                      value={selectedDoctor}
+                      onChange={e => { setSelectedDoctor(e.target.value); setSelectedTime(''); setError(''); }}
+                    >
+                      <option value="">Choose a doctor…</option>
+                      {doctors.map(d => (
+                        <option key={d.id} value={d.id}>{d.name} — {d.specialization}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bk-field">
+                  <label className="bk-label">
+                    <Calendar size={12}/> Select Date
+                  </label>
+                  <input
+                    type="date"
+                    className="bk-input"
+                    value={selectedDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={e => { setSelectedDate(e.target.value); setSelectedTime(''); setError(''); }}
+                  />
+                  {selectedDate && <p className="bk-hint">📅 {formatDate(selectedDate)}</p>}
+                </div>
+
+                {(!selectedDoctor || !selectedDate) && (
+                  <div className="bk-info info">
+                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }}/>
+                    Select a doctor and date to view available time slots.
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="bk-spin-wrap">
+                    <div className="bk-spin"/>
+                    Finding available slots…
+                  </div>
+                )}
+
+                {!loading && availableSlots.length > 0 && (
+                  <div style={{ marginTop: 4 }}>
+                    <label className="bk-label" style={{ marginBottom: 14 }}>
+                      <Clock size={12}/> Available Slots
+                      <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 400, color: '#a1a1aa', textTransform: 'none', letterSpacing: 0 }}>
+                        {totalDuration} min each
+                      </span>
+                    </label>
+                    {Object.entries(groupedSlots()).map(([label, slots]) =>
+                      slots.length === 0 ? null : (
+                        <div key={label} className="bk-slot-group">
+                          <p className="bk-slot-group-label">{label}</p>
+                          <div className="bk-slot-wrap">
+                            {slots.map((slot, i) => (
+                              <button
+                                key={i}
+                                className={`bk-slot${selectedTime === slot.start_time ? ' active' : ''}`}
+                                onClick={() => { setSelectedTime(slot.start_time); setError(''); }}
+                              >
+                                {slot.start_time} – {slot.end_time}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+
+                {!loading && selectedDoctor && selectedDate && availableSlots.length === 0 && !error && (
+                  <div className="bk-info warn" style={{ marginTop: 4 }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }}/>
+                    <div><strong>No slots available</strong> — try a different date or doctor.</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── STEP 3: Payment ── */}
+            {step === 3 && (
+              <div>
+                <p style={{ color: '#71717a', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
+                  Choose how you'd like to pay for this appointment.
+                </p>
+
+                {/* Khalti */}
+                <div
+                  className={`bk-pay-card khalti${paymentMethod === 'khalti' ? ' active' : ''}`}
+                  onClick={() => { setPaymentMethod('khalti'); setError(''); }}
+                >
+                  <div className="bk-pay-icon" style={{ background: '#5C2D91' }}>
+                    <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+                      <text x="50%" y="56%" dominantBaseline="middle" textAnchor="middle" fontSize="22" fill="white" fontWeight="bold">K</text>
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p className="bk-pay-name" style={{ color: '#5C2D91' }}>Pay with Khalti</p>
+                    <p className="bk-pay-desc">Secure online payment via Khalti wallet</p>
+                  </div>
+                  {paymentMethod === 'khalti' && <Check size={17} color="#5C2D91" className="bk-pay-check"/>}
+                </div>
+
+                {/* Cash */}
+                <div
+                  className={`bk-pay-card${paymentMethod === 'cash' ? ' active' : ''}`}
+                  onClick={() => { setPaymentMethod('cash'); setError(''); }}
+                >
+                  <div className="bk-pay-icon" style={{ background: '#dcfce7' }}>
+                    <DollarSign size={20} color="#16a34a"/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p className="bk-pay-name">Pay at Clinic</p>
+                    <p className="bk-pay-desc">Pay in cash when you arrive</p>
+                  </div>
+                  {paymentMethod === 'cash' && <Check size={17} color="#2563eb" className="bk-pay-check"/>}
+                </div>
+
+                {/* Insurance */}
+                <div
+                  className={`bk-pay-card${paymentMethod === 'insurance' ? ' active' : ''}`}
+                  onClick={() => { setPaymentMethod('insurance'); setError(''); }}
+                >
+                  <div className="bk-pay-icon" style={{ background: '#fff7ed' }}>
+                    <Shield size={20} color="#ea580c"/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p className="bk-pay-name">Insurance</p>
+                    <p className="bk-pay-desc">Use your health insurance coverage</p>
+                  </div>
+                  {paymentMethod === 'insurance' && <Check size={17} color="#2563eb" className="bk-pay-check"/>}
+                </div>
+
+                {paymentMethod === 'khalti' && (
+                  <div className="bk-info info" style={{ marginTop: 4, marginBottom: 4 }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }}/>
+                    <span>You'll be redirected to Khalti to complete your payment securely.</span>
+                  </div>
+                )}
+
+                {/* Summary */}
+                <div className="bk-sum">
+                  <p className="bk-sum-title">📋 Booking Summary</p>
+                  {[
+                    ['Services',  `${selectedServices.length} service(s)`],
+                    ['Doctor',    selectedDoctorObj?.name || '—'],
+                    ['Date',      formatDate(selectedDate)],
+                    ['Time',      selectedTime ? `${selectedTime} (${totalDuration} min)` : '—'],
+                    ['Payment',   paymentMethod === 'khalti' ? 'Khalti' : paymentMethod ? paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1) : '—'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="bk-sum-row">
+                      <span className="bk-sum-key">{k}</span>
+                      <span className="bk-sum-val">{v}</span>
+                    </div>
+                  ))}
+                  <div className="bk-sum-total">
+                    <span style={{ fontWeight: 700, fontSize: 15 }}>Total</span>
+                    <span style={{ fontWeight: 800, fontSize: 22, color: '#2563eb' }}>Rs. {totalCost.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* ── Navigation ─────────────────────────────── */}
-          <div style={S.navRow}>
-            {step > 1 && (
-              <button style={S.secBtn} onClick={() => { setStep(step - 1); setError(''); }} disabled={loading}>
-                ← Back
-              </button>
             )}
-            <button
-              style={S.priBtn(primaryDisabled)}
-              disabled={primaryDisabled}
-              onClick={step === 3 ? handleConfirmAppointment : handleContinue}
-            >
-              {loading
-                ? (paymentMethod === 'khalti' ? 'Redirecting to Khalti…' : 'Please wait…')
-                : step === 3
-                  ? (paymentMethod === 'khalti' ? '💜 Pay with Khalti' : '✓ Confirm Appointment')
-                  : 'Continue →'}
-            </button>
-          </div>
 
+            {/* Nav */}
+            <div className="bk-nav">
+              {step > 1 && (
+                <button className="bk-btn-sec" onClick={() => { setStep(step - 1); setError(''); }} disabled={loading}>
+                  ← Back
+                </button>
+              )}
+              <button
+                className={`bk-btn-pri${paymentMethod === 'khalti' && step === 3 ? ' khalti' : ''}`}
+                disabled={primaryDisabled}
+                onClick={step === 3 ? handleConfirmAppointment : handleContinue}
+              >
+                {loading
+                  ? (paymentMethod === 'khalti' ? 'Redirecting to Khalti…' : 'Please wait…')
+                  : step === 3
+                    ? (paymentMethod === 'khalti' ? ' Pay with Khalti' : '✓ Confirm Appointment')
+                    : 'Continue →'}
+              </button>
+            </div>
+
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
