@@ -2,23 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, LogOut, User, Stethoscope } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// ── Read from user_data JSON (set by AuthContext) ─────────────────────
+const getUser = () => {
+  try { return JSON.parse(localStorage.getItem('user_data')) || {}; }
+  catch { return {}; }
+};
+
 export default function DoctorProfilebar() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropRef = useRef(null);
 
-  // Read live from localStorage so it updates after profile save
-  const [doctorName,  setDoctorName]  = useState(() => localStorage.getItem('user_name')  || 'Doctor');
-  const [doctorEmail, setDoctorEmail] = useState(() => localStorage.getItem('user_email') || 'doctor@dentwave.com');
-  const [doctorRole,  setDoctorRole]  = useState(() => localStorage.getItem('user_role')  || 'Doctor');
+  // Re-read user_data on every dropdown open so profile edits reflect instantly
+  const [user, setUser] = useState(getUser);
 
-  // Re-sync from localStorage whenever the dropdown opens (picks up profile edits)
   useEffect(() => {
-    if (dropdownOpen) {
-      setDoctorName( localStorage.getItem('user_name')  || 'Doctor');
-      setDoctorEmail(localStorage.getItem('user_email') || 'doctor@dentwave.com');
-      setDoctorRole( localStorage.getItem('user_role')  || 'Doctor');
-    }
+    if (dropdownOpen) setUser(getUser());
   }, [dropdownOpen]);
 
   useEffect(() => {
@@ -29,8 +28,12 @@ export default function DoctorProfilebar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const doctorName  = user.name  || 'Doctor';
+  const doctorEmail = user.email || 'doctor@dentwave.com';
+  const doctorRole  = user.role  || 'Doctor';
+  const initials    = doctorName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
   const handleLogout = () => { localStorage.clear(); navigate('/login'); };
-  const initials = doctorName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <>
@@ -87,8 +90,7 @@ export default function DoctorProfilebar() {
       `}</style>
 
       <header className="dw-header">
-
-        {/* Page title on the left */}
+        {/* Page title */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', letterSpacing: '-0.2px' }}>
             Doctor Portal
@@ -98,55 +100,36 @@ export default function DoctorProfilebar() {
           </div>
         </div>
 
-        {/* Right side */}
+        {/* Profile dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
           <div style={{ width: 1, height: 24, background: '#eef0f3', margin: '0 2px' }}/>
-
-          {/* Profile dropdown */}
           <div style={{ position: 'relative' }} ref={dropRef}>
-            <div className="dw-profile-btn"
-              onClick={() => setDropdownOpen(v => !v)}>
+            <div className="dw-profile-btn" onClick={() => setDropdownOpen(v => !v)}>
               <div className="dw-avatar">{initials}</div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.2 }}>
-                  {doctorName}
-                </div>
-                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'capitalize' }}>
-                  {doctorRole}
-                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.2 }}>{doctorName}</div>
+                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'capitalize' }}>{doctorRole}</div>
               </div>
               <ChevronDown size={13} color="#9ca3af"
-                style={{ marginLeft: 2, transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              />
+                style={{ marginLeft: 2, transition: 'transform 0.2s', transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}/>
             </div>
 
             {dropdownOpen && (
               <div className="dw-profile-dd">
-                {/* User info */}
                 <div className="dw-dd-head">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div className="dw-avatar" style={{ width: 38, height: 38, fontSize: 13, borderRadius: 10 }}>
-                      {initials}
-                    </div>
+                    <div className="dw-avatar" style={{ width: 38, height: 38, fontSize: 13, borderRadius: 10 }}>{initials}</div>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{doctorName}</div>
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{doctorEmail}</div>
                     </div>
                   </div>
-                  <span className="dw-role-badge">
-                    <Stethoscope size={9}/> {doctorRole}
-                  </span>
+                  <span className="dw-role-badge"><Stethoscope size={9}/> {doctorRole}</span>
                 </div>
-
-                {/* My Profile */}
-                <div className="dw-dd-item"
-                  onClick={() => { setDropdownOpen(false); navigate('/doctorprofile'); }}>
+                <div className="dw-dd-item" onClick={() => { setDropdownOpen(false); navigate('/doctorprofile'); }}>
                   <User size={14} color="#6b7280"/> My Profile
                 </div>
-
                 <div style={{ height: 1, background: '#f3f4f6' }}/>
-
-                {/* Sign Out */}
                 <div className="dw-dd-item danger" onClick={handleLogout}>
                   <LogOut size={14}/> Sign Out
                 </div>

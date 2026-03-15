@@ -1,7 +1,9 @@
 import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
+import Form from "./Contactform";
 import Contactform from "./Contactform";
-
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 
 
 export default function Contact() {
@@ -78,4 +80,3 @@ export default function Contact() {
     </>
   );
 }
-

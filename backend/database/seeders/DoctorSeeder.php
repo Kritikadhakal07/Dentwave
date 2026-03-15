@@ -12,20 +12,20 @@ class DoctorSeeder extends Seeder
     {
         DB::table('users')->insert([
             [
-                'name' => 'Dr. John Doe',
-                'email' => 'doctor1@example.com',
-                'password' => Hash::make('password123'),
+                'name' => 'Dr. Puja Dhital',
+                'email' => 'dhitalpuja9@gmail.com',
+                'password' => Hash::make('Puja@123'),
                 'phone' => '9876543210',
-                'gender' => 'male',
+                'gender' => 'female',
                 'role' => 'doctor',
                 'status' => 'Active',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Dr. Jane Smith',
-                'email' => 'doctor2@example.com',
-                'password' => Hash::make('password123'),
+                'name' => 'Dr. Deepa Dhakal',
+                'email' => 'deepa.dhakal@aadimcollege.edu.np',
+                'password' => Hash::make('Deepa@123'),
                 'phone' => '9876543211',
                 'gender' => 'female',
                 'role' => 'doctor',

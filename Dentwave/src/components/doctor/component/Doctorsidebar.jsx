@@ -7,29 +7,34 @@ import {
 
 const NAV = [
   {
-
     items: [{ label: 'Dashboard', icon: LayoutDashboard, path: '/doctordashboard' }]
   },
   {
-
     items: [
-      { label: 'Appointments', icon: Calendar, path: '/appointments' },
-      { label: 'My Profile', icon: UserCircle, path: '/doctorprofile' },
+      { label: 'Appointments', icon: Calendar,    path: '/appointments'  },
+      { label: 'My Profile',   icon: UserCircle,  path: '/doctorprofile' },
     ]
   }
 ];
 
+// ── Read from user_data JSON (set by AuthContext) ─────────────────────
+const getUser = () => {
+  try { return JSON.parse(localStorage.getItem('user_data')) || {}; }
+  catch { return {}; }
+};
+
 export default function DoctorSidebar() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const [hovered, setHovered] = useState(null);
+
+  const user     = getUser();
+  const userName = user.name  || 'Doctor';
+  const userRole = user.role  || 'Doctor';
+  const initials = userName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
   const handleLogout = () => { localStorage.clear(); navigate('/login'); };
   const isActive = (path) => location.pathname === path;
-
-  const userName = localStorage.getItem('user_name') || 'Doctor';
-  const userRole = localStorage.getItem('user_role') || 'Doctor';
-  const initials = userName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <>
@@ -51,10 +56,10 @@ export default function DoctorSidebar() {
           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .dw-brand-name { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1; }
-        .dw-brand-sub  { font-size: 9.5px; color: #d1d5db; font-weight: 500; letter-spacing: 0.9px; text-transform: uppercase; margin-top: 2px; }
+        .dw-brand-sub  { font-size: 9.5px; color: #6b7280; font-weight: 500; letter-spacing: 0.9px; text-transform: uppercase; margin-top: 2px; }
         .dw-nav { flex: 1; padding: 12px 10px; overflow-y: auto; scrollbar-width: none; }
         .dw-nav::-webkit-scrollbar { display: none; }
-        .dw-section-label { font-size: 9px; font-weight: 700; color: #d1d5db; letter-spacing: 1.3px; text-transform: uppercase; padding: 0 8px; margin: 18px 0 5px; }
+        .dw-section-label { font-size: 9px; font-weight: 700; color: #4b5563; letter-spacing: 1.3px; text-transform: uppercase; padding: 0 8px; margin: 18px 0 5px; }
         .dw-section-label:first-child { margin-top: 2px; }
         .dw-nav-item {
           display: flex; align-items: center; gap: 10px;
@@ -63,7 +68,7 @@ export default function DoctorSidebar() {
         }
         .dw-nav-label { font-size: 13.5px; font-weight: 500; flex: 1; transition: color 0.15s; }
         .dw-nav-arrow { opacity: 0; transition: opacity 0.15s, transform 0.15s; transform: translateX(-4px); }
-        .dw-nav-item.inactive { color: #d1d5db; }
+        .dw-nav-item.inactive { color: #6b7280; }
         .dw-nav-item.inactive:hover { background: rgba(255,255,255,0.05); color: #d1d5db; }
         .dw-nav-item.inactive:hover .dw-nav-arrow { opacity: 1; transform: translateX(0); }
         .dw-nav-item.active { background: rgba(14,165,233,0.1); color: #38bdf8; }
@@ -75,8 +80,8 @@ export default function DoctorSidebar() {
         .dw-user-card:hover { background: rgba(255,255,255,0.06); }
         .dw-user-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .dw-user-name { font-size: 12.5px; font-weight: 600; color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .dw-user-role { font-size: 10px; color: #d1d5db; text-transform: capitalize; }
-        .dw-logout-btn { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border-radius: 8px; border: none; background: transparent; color: #3d4554; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+        .dw-user-role { font-size: 10px; color: #6b7280; text-transform: capitalize; }
+        .dw-logout-btn { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border-radius: 8px; border: none; background: transparent; color: #4b5563; font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
         .dw-logout-btn:hover { background: rgba(239,68,68,0.1); color: #f87171; }
       `}</style>
 
@@ -92,13 +97,14 @@ export default function DoctorSidebar() {
 
         {/* Nav */}
         <nav className="dw-nav">
-          {NAV.map(({ section, items }) => (
-            <div key={section}>
-              <div className="dw-section-label">{section}</div>
+          {NAV.map(({ section, items }, gi) => (
+            <div key={gi}>
+              {section && <div className="dw-section-label">{section}</div>}
               {items.map(({ label, icon: Icon, path }) => {
                 const active = isActive(path);
                 return (
-                  <div key={path} className={`dw-nav-item ${active ? 'active' : 'inactive'}`}
+                  <div key={path}
+                    className={`dw-nav-item ${active ? 'active' : 'inactive'}`}
                     onClick={() => navigate(path)}
                     onMouseEnter={() => setHovered(path)}
                     onMouseLeave={() => setHovered(null)}>
