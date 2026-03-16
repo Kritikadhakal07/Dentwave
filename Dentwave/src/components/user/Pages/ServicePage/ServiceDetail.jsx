@@ -1,4 +1,6 @@
 import { Clock, DollarSign, ChevronLeft, CheckCircle, ListChecks } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../../contexts/AuthContext'
 
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,600;0,700;1,600&display=swap');
@@ -202,6 +204,16 @@ const CSS = `
 `;
 
 const ServiceDetailsPage = ({ service, onBack, onAddToAppointment }) => {
+   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleAddToAppointment = (service) => {
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+    onAddToAppointment(service);
+  };
   if (!service) {
     return (
       <>
@@ -313,7 +325,8 @@ const ServiceDetailsPage = ({ service, onBack, onAddToAppointment }) => {
               </div>
             )}
 
-            <button className="sd-cta" onClick={() => onAddToAppointment(service)}>
+            
+<button className="sd-cta" onClick={() => handleAddToAppointment(service)}>
               + Add to Appointment
             </button>
 

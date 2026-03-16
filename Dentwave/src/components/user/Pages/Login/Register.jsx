@@ -286,12 +286,7 @@ const Register = () => {
         <Container className="d-flex justify-content-center align-items-center">
           <Card className="register-card">
 
-            {/* Brand */}
-            <div className="text-center mb-1">
-              <div className="brand-title">
-                <span className="brand-dot"></span>Dentwave
-              </div>
-            </div>
+           
 
             <div className="divider" />
 
