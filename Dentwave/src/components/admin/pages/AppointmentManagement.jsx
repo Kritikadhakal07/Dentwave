@@ -25,7 +25,7 @@ export default function AppointmentManagement() {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/appointments`);
-      setAppointments(res.data);
+      setAppointments(res.data.appointments || []);
     } catch (err) {
       showToast('Error loading appointments: ' + (err.response?.data?.message || err.message), 'danger');
     } finally {
