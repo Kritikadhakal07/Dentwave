@@ -1,9 +1,12 @@
 import React from 'react';
 import './Home.css';
 import Hero from "../../../../assets/home.gif";
-import ServicesSection from './Services';
+
+import { useNavigate } from 'react-router-dom';  // ✅ add import
+import ServicesSection from './Services.jsx';     
 
 const Home = () => {
+   const navigate = useNavigate();
   return (
     <div className="home-wrapper">
       {/* Hero Section */}
@@ -18,7 +21,10 @@ const Home = () => {
             <p className="hero-description">
               Experience comprehensive dental care in a state-of-the-art environment, tailored to meet unique needs.
             </p>
-            <button className="btn btn-primary appointment-btn">
+             <button
+              className="btn btn-primary appointment-btn"
+              onClick={() => navigate('/service')}
+            >
               Book an Appointment
             </button>
           </div>
@@ -103,7 +109,10 @@ const Home = () => {
           <p className="cta-description">
             Schedule your consultation today and take the first step towards optimal dental health and a dazzling smile.
           </p>
-          <button className="btn btn-primary cta-btn">
+         <button
+            className="btn btn-primary cta-btn"
+            onClick={() => navigate('/service')}
+          >
             Book Your Appointment Now
           </button>
         </div>

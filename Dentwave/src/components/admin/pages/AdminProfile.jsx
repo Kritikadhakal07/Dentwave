@@ -9,11 +9,11 @@ const API = 'http://127.0.0.1:8000/api';
 function ProfilePage() {
   const navigate = useNavigate();
 
-  // Read from localStorage
-  const [adminId]    = useState(() => localStorage.getItem('user_id'));
-  const [adminName,  setAdminName]  = useState(() => localStorage.getItem('user_name')  || '');
-  const [adminEmail, setAdminEmail] = useState(() => localStorage.getItem('user_email') || '');
-  const [adminRole]                 = useState(() => localStorage.getItem('user_role')  || 'admin');
+ const storedUser = JSON.parse(localStorage.getItem('user_data') || '{}');
+const [adminId]    = useState(() => storedUser.id    || null);
+const [adminName,  setAdminName]  = useState(() => storedUser.name  || '');
+const [adminEmail, setAdminEmail] = useState(() => storedUser.email || '');
+const [adminRole]                 = useState(() => storedUser.role  || 'admin');
 
   const [editing, setEditing]       = useState(false);
   const [saving,  setSaving]        = useState(false);
@@ -45,9 +45,10 @@ function ProfilePage() {
           setForm({ name: me.name, email: me.email, phone: me.phone || '' });
           setAdminName(me.name);
           setAdminEmail(me.email);
-          // Sync localStorage too
-          localStorage.setItem('user_name',  me.name);
-          localStorage.setItem('user_email', me.email);
+          // ✅ Replace with
+const updatedUser = { ...storedUser, name: me.name, email: me.email, phone: me.phone };
+localStorage.setItem('user_data', JSON.stringify(updatedUser));
+
         }
       })
       .catch(() => {});
@@ -61,7 +62,7 @@ function ProfilePage() {
   ]).then(([users, appts, docs]) => {
     setStats({
       totalUsers:        users.filter(u => u.role === 'user').length,
-      totalAppointments: appts.length,
+      totalAppointments: (appts.appointments || appts).length,
       totalDoctors:      docs.filter(d => d.status === 'Active').length,
     });
   }).catch(() => {});
@@ -87,9 +88,9 @@ function ProfilePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Update failed.');
 
-      // Update localStorage
-      localStorage.setItem('user_name',  form.name);
-      localStorage.setItem('user_email', form.email);
+    // ✅ Correct — updates the same key AuthContext reads
+const updatedUser = { ...storedUser, name: form.name, email: form.email };
+localStorage.setItem('user_data', JSON.stringify(updatedUser));
       setAdminName(form.name);
       setAdminEmail(form.email);
       setSuccess('Profile updated successfully!');

@@ -642,7 +642,15 @@ const BookingPage = ({ selectedServices, onRemoveService, onConfirm, onBack }) =
     if (!paymentMethod) { setError('Please select a payment method.'); return; }
     setLoading(true);
     try {
-      const userId = localStorage.getItem('user_id') || 1;
+      // ✅ Correct — reads from the right key
+const storedUser = JSON.parse(localStorage.getItem('user_data') || '{}');
+const userId = storedUser.id;
+
+if (!userId) {
+  setError('You must be logged in to book an appointment.');
+  setLoading(false);
+  return;
+}
       const res = await fetch('http://127.0.0.1:8000/api/appointments', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },

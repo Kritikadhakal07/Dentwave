@@ -195,47 +195,49 @@ public function update(Request $request, $id)
 
     $appointment = $existing[0];
 
-    // Soft delete logic — when admin sets status to Cancelled
-    if ($validated['status'] === 'Cancelled') {
+    // ── Build notification for EVERY status ──────────────────────
+    $payment = \App\Models\Payment::where('appointment_id', $id)
+        ->where('status', 'Completed')
+        ->where('gateway', 'Khalti')
+        ->first();
 
-        // Check if a completed Khalti payment exists for this appointment
-        $payment = \App\Models\Payment::where('appointment_id', $id)
-            ->where('status', 'Completed')
-            ->where('gateway', 'Khalti')
-            ->first();
+    $notificationMap = [
+        'Confirmed'  => [
+            'title'   => 'Appointment Confirmed',
+            'message' => 'Your appointment has been confirmed by the admin. Please arrive on time.',
+            'type'    => 'success',
+        ],
+        'Completed'  => [
+            'title'   => 'Appointment Completed',
+            'message' => 'Your appointment has been marked as completed. Thank you for visiting!',
+            'type'    => 'info',
+        ],
+        'Pending'    => [
+            'title'   => 'Appointment Pending',
+            'message' => 'Your appointment status has been set to pending. We will confirm it shortly.',
+            'type'    => 'warning',
+        ],
+        'Cancelled' => [
+    'title'   => 'Appointment Cancelled',
+    'message' => $payment
+        ? ' Your appointment has been cancelled. A refund of Rs. ' . number_format($payment->amount, 2) . ' will be processed to your Khalti wallet within 5-7 business days. For queries, contact support.'
+        : ' Your appointment has been cancelled. We apologize for the inconvenience. Please contact support for further assistance.',
+    'type'    => 'danger',
+],
+    ];
 
-        // Build notification message
-        $refundNote = $payment
-            ? "Your appointment has been cancelled by the admin. Since you paid via Khalti, please contact support for your refund of Rs. " . number_format($payment->amount, 2) . "."
-            : "Your appointment has been cancelled by the admin.";
-
-        // Create in-app notification for the user
+    // Send notification for all statuses
+    if (isset($notificationMap[$validated['status']])) {
+        $n = $notificationMap[$validated['status']];
         \App\Models\Notification::create([
             'user_id' => $appointment->user_id,
-            'title'   => 'Appointment Cancelled',
-            'message' => $refundNote,
-            'type'    => 'danger',
-        ]);
-
-        // Soft delete: mark appointment as Cancelled
-        DB::update(
-            "UPDATE appointments SET status = 'Cancelled', updated_at = NOW() WHERE id = ?",
-            [$id]
-        );
-
-        $updated = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
-
-        return response()->json([
-            'success'      => true,
-            'message'      => 'Appointment cancelled. User has been notified.',
-            'refund_notice' => $payment
-                ? 'Khalti payment detected. User notified to contact support for refund of Rs. ' . number_format($payment->amount, 2) . '.'
-                : null,
-            'appointment'  => $updated[0],
+            'title'   => $n['title'],
+            'message' => $n['message'],
+            'type'    => $n['type'],
         ]);
     }
 
-    // Normal status update (Confirmed, Completed, Pending)
+    // Update appointment status
     DB::update(
         "UPDATE appointments SET status = ?, updated_at = NOW() WHERE id = ?",
         [$validated['status'], $id]
@@ -244,9 +246,12 @@ public function update(Request $request, $id)
     $updated = DB::select("SELECT * FROM appointments WHERE id = ?", [$id]);
 
     return response()->json([
-        'success'     => true,
-        'message'     => 'Appointment updated successfully',
-        'appointment' => $updated[0],
+        'success'      => true,
+        'message'      => 'Appointment updated successfully',
+        'refund_notice' => $validated['status'] === 'Cancelled' && $payment
+            ? 'Khalti payment detected. User notified to contact support for refund of Rs. ' . number_format($payment->amount, 2) . '.'
+            : null,
+        'appointment'  => $updated[0],
     ]);
 }
 

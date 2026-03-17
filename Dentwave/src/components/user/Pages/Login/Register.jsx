@@ -306,7 +306,7 @@ const Register = () => {
                   <span className="input-group-text"><FaUser /></span>
                   <Form.Control
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="Your Name"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
@@ -323,7 +323,7 @@ const Register = () => {
                   <span className="input-group-text"><FaEnvelope /></span>
                   <Form.Control
                     type="email"
-                    placeholder="john@example.com"
+                    placeholder="ram@example.com"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}

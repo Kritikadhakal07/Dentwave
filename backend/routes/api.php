@@ -10,59 +10,65 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AvailableSlotController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\NotificationController;
-
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\DoctorProfileController;
 
+// ── Auth ──────────────────────────────────────────────────────
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login',    [AuthController::class, 'login']);
 
-Route::post('/register',[AuthController::class,'register']);
-Route::post('/login',[AuthController::class,'login']);
-
-Route::get('/users', [UserController::class, 'index']);
-Route::post('/users', [UserController::class, 'store']);
+// ── Users ─────────────────────────────────────────────────────
+Route::get('/users',              [UserController::class, 'index']);
+Route::post('/users',             [UserController::class, 'store']);
+Route::get('/users/{id}',         [UserController::class, 'show']);
 Route::post('/users/update/{id}', [UserController::class, 'update']);
-Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::delete('/users/{id}',      [UserController::class, 'destroy']);
+
+// ── Contact ───────────────────────────────────────────────────
 Route::post('/contact', [ContactController::class, 'store']);
-Route::get('/users/{id}', [UserController::class, 'show']);
 
-
-
-
+// ── Services ──────────────────────────────────────────────────
+Route::get('/services',              [ServiceController::class, 'index']);
+Route::post('/services',             [ServiceController::class, 'store']);
 Route::post('/services/update/{id}', [ServiceController::class, 'update']);
-Route::delete('/services/{id}', [ServiceController::class, 'destroy']);
-Route::get('/services', [ServiceController::class, 'index']);
-Route::post('/services', [ServiceController::class, 'store']);
+Route::delete('/services/{id}',      [ServiceController::class, 'destroy']);
 
-Route::get('/doctors', [DoctorController::class, 'index']);
-Route::post('/doctors', [DoctorController::class, 'store']);
+// ── Doctors ───────────────────────────────────────────────────
+Route::get('/doctors',              [DoctorController::class, 'index']);
+Route::post('/doctors',             [DoctorController::class, 'store']);
 Route::post('/doctors/update/{id}', [DoctorController::class, 'update']);
-Route::delete('/doctors/{id}', [DoctorController::class, 'destroy']);
-Route::get('doctor/profile/{id}',    [DoctorProfileController::class, 'getProfile']);
-Route::post('doctor/profile/{id}',   [DoctorProfileController::class, 'updateProfile']);
+Route::delete('/doctors/{id}',      [DoctorController::class, 'destroy']);
+Route::get('/doctor/profile/{id}',  [DoctorProfileController::class, 'getProfile']);
+Route::post('/doctor/profile/{id}', [DoctorProfileController::class, 'updateProfile']);
 
+// ── Time Slots ────────────────────────────────────────────────
+Route::get('/time-slots/{doctorId}',        [TimeSlotController::class, 'getByDoctor']);
+Route::post('/time-slots',                  [TimeSlotController::class, 'store']);
+Route::post('/time-slots/update/{id}',      [TimeSlotController::class, 'update']);
+Route::delete('/time-slots/{id}',           [TimeSlotController::class, 'destroy']);
 
- Route::post('/time-slots', [TimeSlotController::class, 'store']);
- Route::post('/time-slots/update/{id}', [TimeSlotController::class, 'update']);
-Route::delete('/time-slots/{id}', [TimeSlotController::class, 'destroy']);
-Route::get('/time-slots/{doctorId}', [TimeSlotController::class, 'getByDoctor']);
-        
+// ── Available Slots ───────────────────────────────────────────
+Route::post('/available-slots', [AvailableSlotController::class, 'getAvailableSlots']);
 
-        Route::post('/available-slots', [AvailableSlotController::class, 'getAvailableSlots']);
-        // Appointment Management (admin can view all, update, delete)
-        Route::get('/appointments', [AppointmentController::class, 'index']);
+// ── Appointments ──────────────────────────────────────────────
+// ✅ Specific routes FIRST, dynamic {id} routes LAST
+Route::get('/appointments/user/{userId}',    [AppointmentController::class, 'getByUser']);
+Route::get('/appointments',                  [AppointmentController::class, 'index']);
+Route::post('/appointments',                 [AppointmentController::class, 'store']);
+Route::post('/appointments/update/{id}',     [AppointmentController::class, 'update']);
+Route::delete('/appointments/{id}',          [AppointmentController::class, 'destroy']);
 
-Route::post('/appointments', [AppointmentController::class, 'store']);
-        Route::post('/appointments/update/{id}', [AppointmentController::class, 'update']);
-        Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+// ── Patients ──────────────────────────────────────────────────
+Route::get('/patients',          [PatientController::class, 'index']);
+Route::post('/patients',         [PatientController::class, 'store']);
+Route::get('/patients/{id}',     [PatientController::class, 'show']);
+Route::put('/patients/{id}',     [PatientController::class, 'update']);
+Route::delete('/patients/{id}',  [PatientController::class, 'destroy']);
 
-
-// Appointment Management (user can view own, update, delete)
-Route::get('/appointments/user/{userId}', [AppointmentController::class, 'getByUser']);
-Route::post('/appointments', [AppointmentController::class, 'store']);
-
-
-//Patient management
- Route::get('/patients', [PatientController::class, 'index']);
-Route::post('/patients', [PatientController::class, 'store']);
-Route::put('/patients/{id}', [PatientController::class, 'update']);
-Route::delete('/patients/{id}', [PatientController::class, 'destroy']);
-Route::get('/patients/{id}', [PatientController::class, 'show']);
+// ── Notifications ─────────────────────────────────────────────
+// ✅ Specific routes FIRST, dynamic {id} routes LAST
+Route::get('/notifications/user/{userId}',          [NotificationController::class, 'getByUser']);
+Route::get('/notifications/unread-count/{userId}',  [NotificationController::class, 'unreadCount']);
+Route::post('/notifications/mark-all-read/{userId}',[NotificationController::class, 'markAllRead']);
+Route::post('/notifications/{id}/mark-read',        [NotificationController::class, 'markRead']);
