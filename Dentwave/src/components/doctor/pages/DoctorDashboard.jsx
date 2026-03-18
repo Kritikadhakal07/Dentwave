@@ -163,7 +163,7 @@ export default function DoctorDashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111827', marginBottom: 4 }}>
-            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Dr. {firstName} 👋
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Dr. {firstName} 
           </h2>
           <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 0 }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}

@@ -264,29 +264,14 @@ function DoctorProfilePage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 22, alignItems: 'start' }}>
 
-        {/* ── Left ─────────────────────────────────────────────── */}
+        
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Avatar card */}
+          
           <div style={{ ...card, padding: '28px 22px', textAlign: 'center' }}>
-            <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
-              {avatarSrc ? (
-                <img src={avatarSrc} alt={userName}
-                  style={{ width: 78, height: 78, borderRadius: 20, objectFit: 'cover', border: '3px solid #e0f2fe', boxShadow: '0 8px 24px rgba(14,165,233,0.2)' }}/>
-              ) : (
-                <div style={{ width: 78, height: 78, borderRadius: 20, background: 'linear-gradient(135deg, #0ea5e9, #6366f1)', color: '#fff', fontSize: 26, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: '0 8px 24px rgba(14,165,233,0.25)' }}>
-                  {initials}
-                </div>
-              )}
-              {/* Upload button */}
-              <label htmlFor="docImgUpload"
-                style={{ position: 'absolute', bottom: -4, right: -4, width: 26, height: 26, borderRadius: '50%', background: '#0ea5e9', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
-                <Edit2 size={10}/>
-              </label>
-              <input id="docImgUpload" type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }}/>
-            </div>
+         
 
-            {/* Name — shows live as user edits */}
+           
             <h3 style={{ fontWeight: 700, fontSize: 16, color: '#111827', marginBottom: 3 }}>
               {editing ? (form.name || '—') : (userName || form.name || '—')}
             </h3>
@@ -300,7 +285,7 @@ function DoctorProfilePage() {
               <Stethoscope size={9}/> Doctor
             </div>
 
-            {/* Status badge */}
+            
             {form.status && (
               <div style={{ marginTop: 8 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 11px', borderRadius: 20, background: form.status === 'Active' ? '#f0fdf4' : '#f3f4f6', color: form.status === 'Active' ? '#15803d' : '#6b7280', fontSize: 10, fontWeight: 700 }}>
@@ -309,7 +294,7 @@ function DoctorProfilePage() {
               </div>
             )}
 
-            {/* Show staged image note */}
+         
             {imageFile && (
               <p style={{ fontSize: 11, color: '#3b82f6', marginTop: 10, marginBottom: 0 }}>
                 New photo staged — save to apply.

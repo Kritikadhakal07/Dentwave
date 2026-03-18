@@ -10,24 +10,36 @@ const DoctorManagement = () => {
   const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
   const [editDoctor, setEditDoctor] = useState(null);
   const [editTimeSlot, setEditTimeSlot] = useState(null);
-const [doctorForm, setDoctorForm] = useState({
-  name: '',
-  email: '',        // add this
-  password: '',     // add this
-  specialization: '',
-  experience: '',
-  contact: '',
-  status: 'Active',
-  image: null
-});
 
-  const [timeSlotForm, setTimeSlotForm] = useState({
-    doctor_id: '',
-    day: 'Monday',
-    start_time: '09:00 AM',
-    end_time: '10:00 AM',
-    status: 'Available'
+  const [doctorForm, setDoctorForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    specialization: '',
+    experience: '',
+    contact: '',
+    status: 'Active',
+    image: null
   });
+
+  // ✅ CHANGED: 'day' replaced with 'date'
+  const [timeSlotForm, setTimeSlotForm] = useState({
+    doctor_id:  '',
+    date:       '',       // was: day: 'Monday'
+    start_time: '09:00',
+    end_time:   '10:00',
+    status:     'Available'
+  });
+
+  // Today's date for min attribute — no past dates allowed
+  const today = new Date().toISOString().split('T')[0];
+
+  // Derive day name from date for display in table
+  const getDayName = (dateStr) => {
+    if (!dateStr) return '—';
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    return days[new Date(dateStr).getDay()];
+  };
 
   useEffect(() => {
     fetchDoctors();
@@ -63,13 +75,13 @@ const [doctorForm, setDoctorForm] = useState({
   const handleDoctorSubmit = async () => {
     try {
       const payload = new FormData();
-      payload.append('name', doctorForm.name);
-         payload.append('email', doctorForm.email);        // ← MISSING
-    payload.append('password', doctorForm.password);
+      payload.append('name',           doctorForm.name);
+      payload.append('email',          doctorForm.email);
+      payload.append('password',       doctorForm.password);
       payload.append('specialization', doctorForm.specialization);
-      payload.append('experience', doctorForm.experience);
-      payload.append('contact', doctorForm.contact);
-      payload.append('status', doctorForm.status);
+      payload.append('experience',     doctorForm.experience);
+      payload.append('contact',        doctorForm.contact);
+      payload.append('status',         doctorForm.status);
       if (doctorForm.image) payload.append('image', doctorForm.image);
 
       if (editDoctor) {
@@ -85,16 +97,7 @@ const [doctorForm, setDoctorForm] = useState({
       fetchDoctors();
       setShowAddDoctor(false);
       setEditDoctor(null);
-     setDoctorForm({
-  name: '',
-  email: '',        // add this
-  password: '',     // add this
-  specialization: '',
-  experience: '',
-  contact: '',
-  status: 'Active',
-  image: null
-});
+      setDoctorForm({ name: '', email: '', password: '', specialization: '', experience: '', contact: '', status: 'Active', image: null });
     } catch (err) {
       console.error("Error saving doctor:", err);
       alert("Error: " + (err.response?.data?.message || err.message));
@@ -115,53 +118,52 @@ const [doctorForm, setDoctorForm] = useState({
   const openEditDoctor = (doctor) => {
     setEditDoctor(doctor);
     setDoctorForm({
-      name: doctor.name,
-       email: doctor.email || '',   // ← MISSING
-    password: '', 
+      name:           doctor.name,
+      email:          doctor.email || '',
+      password:       '',
       specialization: doctor.specialization,
-      experience: doctor.experience,
-      contact: doctor.contact,
-      status: doctor.status,
-      image: null
+      experience:     doctor.experience,
+      contact:        doctor.contact,
+      status:         doctor.status,
+      image:          null
     });
     setShowAddDoctor(true);
   };
 
   const handleTimeSlotSubmit = async () => {
+    // ✅ CHANGED: validate date is selected
+    if (!timeSlotForm.date) {
+      alert('Please select a date.');
+      return;
+    }
+    if (timeSlotForm.end_time <= timeSlotForm.start_time) {
+      alert('End time must be after start time.');
+      return;
+    }
+
     try {
+      // ✅ CHANGED: sends 'date' instead of 'day'
       const payload = {
-        doctor_id: timeSlotForm.doctor_id || selectedDoctor,
-        day: timeSlotForm.day,
+        doctor_id:  timeSlotForm.doctor_id || selectedDoctor,
+        date:       timeSlotForm.date,      // e.g. "2026-03-25"
         start_time: timeSlotForm.start_time,
-        end_time: timeSlotForm.end_time,
-        status: timeSlotForm.status
+        end_time:   timeSlotForm.end_time,
+        status:     timeSlotForm.status
       };
 
-      console.log("Submitting time slot:", payload); // Debug log
-
       if (editTimeSlot) {
-        const response = await axios.post(`http://127.0.0.1:8000/api/time-slots/update/${editTimeSlot.id}`, payload);
-        console.log("Update response:", response.data);
+        await axios.post(`http://127.0.0.1:8000/api/time-slots/update/${editTimeSlot.id}`, payload);
       } else {
-        const response = await axios.post("http://127.0.0.1:8000/api/time-slots", payload);
-        console.log("Create response:", response.data);
+        await axios.post("http://127.0.0.1:8000/api/time-slots", payload);
       }
 
-      // Refresh the time slots for the selected doctor
       await fetchTimeSlots(selectedDoctor);
-      
       setShowAddTimeSlot(false);
       setEditTimeSlot(null);
-      setTimeSlotForm({
-        doctor_id: '',
-        day: 'Monday',
-        start_time: '09:00 AM',
-        end_time: '10:00 AM',
-        status: 'Available'
-      });
+      // ✅ CHANGED: reset with date instead of day
+      setTimeSlotForm({ doctor_id: '', date: '', start_time: '09:00', end_time: '10:00', status: 'Available' });
     } catch (err) {
       console.error("Error saving time slot:", err);
-      console.error("Error response:", err.response?.data);
       alert("Error: " + (err.response?.data?.message || err.message));
     }
   };
@@ -178,24 +180,25 @@ const [doctorForm, setDoctorForm] = useState({
 
   const openEditTimeSlot = (slot) => {
     setEditTimeSlot(slot);
+    // ✅ CHANGED: loads 'date' from slot instead of 'day'
     setTimeSlotForm({
-      doctor_id: slot.doctor_id,
-      day: slot.day,
+      doctor_id:  slot.doctor_id,
+      date:       slot.date,        // was: day: slot.day
       start_time: slot.start_time,
-      end_time: slot.end_time,
-      status: slot.status
+      end_time:   slot.end_time,
+      status:     slot.status
     });
     setShowAddTimeSlot(true);
   };
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'Active': return 'success';
-      case 'On Leave': return 'warning';
-      case 'Vacation': return 'primary';
-      case 'Available': return 'success';
-      case 'Booked': return 'danger';
-      default: return 'secondary';
+      case 'Active':     return 'success';
+      case 'On Leave':   return 'warning';
+      case 'Vacation':   return 'primary';
+      case 'Available':  return 'success';
+      case 'Booked':     return 'danger';
+      default:           return 'secondary';
     }
   };
 
@@ -209,22 +212,15 @@ const [doctorForm, setDoctorForm] = useState({
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="mb-0">Doctor Roster</h5>
             <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddDoctor(true)}>
-              <Plus size={16} className="me-1" />
-              Add Doctor
+              <Plus size={16} className="me-1" /> Add Doctor
             </button>
           </div>
-
           <div className="table-responsive">
             <table className="table table-hover">
               <thead className="table-light">
                 <tr>
-                  <th>Image</th>
-                  <th>Name</th>
-                  <th>Specialization</th>
-                  <th>Experience</th>
-                  <th>Contact</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>Image</th><th>Name</th><th>Specialization</th>
+                  <th>Experience</th><th>Contact</th><th>Status</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,11 +228,8 @@ const [doctorForm, setDoctorForm] = useState({
                   <tr key={doctor.id}>
                     <td>
                       {doctor.image ? (
-                        <img
-                          src={`http://127.0.0.1:8000/storage/${doctor.image}`}
-                          alt={doctor.name}
-                          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%' }}
-                        />
+                        <img src={`http://127.0.0.1:8000/storage/${doctor.image}`} alt={doctor.name}
+                          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '50%' }} />
                       ) : (
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e3f2fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#1976d2' }}>
                           {doctor.name.charAt(0)}
@@ -247,19 +240,11 @@ const [doctorForm, setDoctorForm] = useState({
                     <td>{doctor.specialization}</td>
                     <td>{doctor.experience}</td>
                     <td>{doctor.contact}</td>
-                    <td>
-                      <span className={`badge bg-${getStatusColor(doctor.status)}`}>
-                        {doctor.status}
-                      </span>
-                    </td>
+                    <td><span className={`badge bg-${getStatusColor(doctor.status)}`}>{doctor.status}</span></td>
                     <td>
                       <div className="d-flex gap-2">
-                        <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditDoctor(doctor)}>
-                          <Edit size={14} />
-                        </button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteDoctor(doctor.id)}>
-                          <Trash2 size={14} />
-                        </button>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditDoctor(doctor)}><Edit size={14} /></button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteDoctor(doctor.id)}><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -275,57 +260,38 @@ const [doctorForm, setDoctorForm] = useState({
             <h5 className="mb-0">Doctor Availability</h5>
             <div className="d-flex gap-2">
               <select className="form-select form-select-sm" style={{ maxWidth: '200px' }}
-                value={selectedDoctor}
-                onChange={(e) => setSelectedDoctor(e.target.value)}
-              >
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
+                value={selectedDoctor} onChange={(e) => setSelectedDoctor(e.target.value)}>
+                {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
               <button className="btn btn-outline-primary btn-sm" onClick={() => setShowAddTimeSlot(true)}>
-                <Calendar size={16} className="me-1" />
-                Add Time Slot
+                <Calendar size={16} className="me-1" /> Add Time Slot
               </button>
             </div>
           </div>
-
           <div className="table-responsive">
             <table className="table table-hover">
               <thead className="table-light">
                 <tr>
-                  <th>Day</th>
-                  <th>Start Time</th>
-                  <th>End Time</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  {/* ✅ CHANGED: Show both Date and Day columns */}
+                  <th>Date</th><th>Day</th><th>Start Time</th><th>End Time</th><th>Status</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {timeSlots.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="text-center text-muted py-4">
-                      No time slots available for this doctor. Click "Add Time Slot" to create one.
-                    </td>
-                  </tr>
+                  <tr><td colSpan="6" className="text-center text-muted py-4">No time slots available.</td></tr>
                 ) : (
                   timeSlots.map(slot => (
                     <tr key={slot.id}>
-                      <td>{slot.day}</td>
+                      {/* ✅ CHANGED: show slot.date and derived day name */}
+                      <td>{slot.date}</td>
+                      <td>{getDayName(slot.date)}</td>
                       <td>{slot.start_time}</td>
                       <td>{slot.end_time}</td>
-                      <td>
-                        <span className={`badge bg-${getStatusColor(slot.status)}`}>
-                          {slot.status}
-                        </span>
-                      </td>
+                      <td><span className={`badge bg-${getStatusColor(slot.status)}`}>{slot.status}</span></td>
                       <td>
                         <div className="d-flex gap-2">
-                          <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditTimeSlot(slot)}>
-                            <Edit size={14} />
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTimeSlot(slot.id)}>
-                            <Trash2 size={14} />
-                          </button>
+                          <button className="btn btn-sm btn-outline-secondary" onClick={() => openEditTimeSlot(slot)}><Edit size={14} /></button>
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteTimeSlot(slot.id)}><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
@@ -336,7 +302,7 @@ const [doctorForm, setDoctorForm] = useState({
           </div>
         </div>
 
-        {/* Add/Edit Doctor Modal */}
+        {/* Add/Edit Doctor Modal — unchanged */}
         {showAddDoctor && (
           <>
             <div className="modal-backdrop fade show" onClick={() => { setShowAddDoctor(false); setEditDoctor(null); }}></div>
@@ -364,7 +330,6 @@ const [doctorForm, setDoctorForm] = useState({
                       <label className="form-label">Password</label>
                       <input type="password" className="form-control" value={doctorForm.password} onChange={(e) => setDoctorForm({...doctorForm, password: e.target.value})} />
                     </div>
-
                     <div className="mb-3">
                       <label className="form-label">Specialization</label>
                       <input className="form-control" value={doctorForm.specialization} onChange={(e) => setDoctorForm({...doctorForm, specialization: e.target.value})} />
@@ -408,25 +373,38 @@ const [doctorForm, setDoctorForm] = useState({
                     <button type="button" className="btn-close" onClick={() => { setShowAddTimeSlot(false); setEditTimeSlot(null); }}></button>
                   </div>
                   <div className="modal-body">
+
+                    {/* ✅ CHANGED: date picker instead of day dropdown */}
                     <div className="mb-3">
-                      <label className="form-label">Day</label>
-                      <select className="form-select" value={timeSlotForm.day} onChange={(e) => setTimeSlotForm({...timeSlotForm, day: e.target.value})}>
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                          <option key={day}>{day}</option>
-                        ))}
-                      </select>
+                      <label className="form-label">Date *</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={timeSlotForm.date}
+                        min={today}
+                        onChange={(e) => setTimeSlotForm({...timeSlotForm, date: e.target.value})}
+                        required
+                      />
+                      {/* Show day name below so admin knows what day it is */}
+                      {timeSlotForm.date && (
+                        <small className="text-muted">{getDayName(timeSlotForm.date)}</small>
+                      )}
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Start Time</label>
-                      <input type="time" className="form-control" value={timeSlotForm.start_time} onChange={(e) => setTimeSlotForm({...timeSlotForm, start_time: e.target.value})} />
+                      <input type="time" className="form-control" value={timeSlotForm.start_time}
+                        onChange={(e) => setTimeSlotForm({...timeSlotForm, start_time: e.target.value})} />
                     </div>
                     <div className="mb-3">
                       <label className="form-label">End Time</label>
-                      <input type="time" className="form-control" value={timeSlotForm.end_time} onChange={(e) => setTimeSlotForm({...timeSlotForm, end_time: e.target.value})} />
+                      <input type="time" className="form-control" value={timeSlotForm.end_time}
+                        onChange={(e) => setTimeSlotForm({...timeSlotForm, end_time: e.target.value})} />
                     </div>
                     <div className="mb-3">
                       <label className="form-label">Status</label>
-                      <select className="form-select" value={timeSlotForm.status} onChange={(e) => setTimeSlotForm({...timeSlotForm, status: e.target.value})}>
+                      <select className="form-select" value={timeSlotForm.status}
+                        onChange={(e) => setTimeSlotForm({...timeSlotForm, status: e.target.value})}>
                         <option>Available</option>
                         <option>Booked</option>
                       </select>
@@ -441,6 +419,7 @@ const [doctorForm, setDoctorForm] = useState({
             </div>
           </>
         )}
+
       </div>
     </div>
   );

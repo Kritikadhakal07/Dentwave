@@ -19,7 +19,7 @@ class AvailableSlotController extends Controller
         $doctorId   = $validated['doctor_id'];
         $date       = $validated['date'];
         $serviceIds = $validated['service_ids'];
-        $dayOfWeek  = date('l', strtotime($date));
+        $dayOfWeek  = date('l', strtotime($date)); // still used for display only
 
         // STEP 1: Total treatment duration from selected services
         $result = DB::select(
@@ -35,26 +35,26 @@ class AvailableSlotController extends Controller
         }
 
         $bufferTime = 5;
-        // slotSize = the full window one appointment occupies (treatment + buffer gap after it)
-        $slotSize = $treatmentDuration + $bufferTime;
+        $slotSize   = $treatmentDuration + $bufferTime;
 
-        // STEP 2: Doctor's working windows for this day of week
+        // STEP 2: Doctor's working windows for this EXACT DATE
+        // ✅ Changed: now matches by date instead of day name
         $workingWindows = DB::select(
             "SELECT start_time, end_time FROM time_slots
-             WHERE doctor_id = ? AND day = ?
+             WHERE doctor_id = ? AND date = ?
              ORDER BY start_time",
-            [$doctorId, $dayOfWeek]
+            [$doctorId, $date]
         );
 
         if (empty($workingWindows)) {
             return response()->json([
                 'success'         => false,
-                'message'         => "Doctor is not available on {$dayOfWeek}s",
+                'message'         => "Doctor is not available on {$date} ({$dayOfWeek})",
                 'available_slots' => []
             ]);
         }
 
-        // STEP 3: Existing appointments block time as: start → (end + buffer)
+        // STEP 3: Existing appointments block time
         $booked = DB::select(
             "SELECT appointment_time, total_duration FROM appointments
              WHERE doctor_id = ? AND appointment_date = ? AND status != 'Cancelled'
@@ -79,13 +79,11 @@ class AvailableSlotController extends Controller
             $cursor      = $windowStart;
 
             foreach ($occupiedBlocks as $block) {
-                // Ignore blocks fully outside this window
                 if ($block['end'] <= $windowStart || $block['start'] >= $windowEnd) {
                     continue;
                 }
 
-                // Slots in the free gap BEFORE this block
-                $gapEnd = min($block['start'], $windowEnd); // never spill past window
+                $gapEnd = min($block['start'], $windowEnd);
                 while ($cursor + $slotSize <= $gapEnd) {
                     $availableSlots[] = [
                         'start_time' => $this->toTime($cursor),
@@ -95,11 +93,9 @@ class AvailableSlotController extends Controller
                     $cursor += $slotSize;
                 }
 
-                // Jump past the occupied block
                 $cursor = max($cursor, $block['end']);
             }
 
-            // Slots in the remaining gap AFTER all blocks
             while ($cursor + $slotSize <= $windowEnd) {
                 $availableSlots[] = [
                     'start_time' => $this->toTime($cursor),
@@ -114,6 +110,7 @@ class AvailableSlotController extends Controller
             'success'         => true,
             'available_slots' => $availableSlots,
             'total_duration'  => $treatmentDuration,
+            'date'            => $date,
             'day'             => $dayOfWeek,
         ]);
     }

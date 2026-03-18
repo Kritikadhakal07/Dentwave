@@ -71,11 +71,11 @@ export default function NotificationBell({ userId }) {
   };
 
   const typeColor = (type) => ({
-    danger:  { bg: '#fff5f5', border: '#f5c6cb', icon: '🔴' },
-    warning: { bg: '#fffbf0', border: '#ffc107', icon: '🟡' },
-    success: { bg: '#f0fff4', border: '#c3e6cb', icon: '🟢' },
-    info:    { bg: '#f0f8ff', border: '#bee5eb', icon: '🔵' },
-  }[type] || { bg: '#f8f9fa', border: '#dee2e6', icon: '⚪' });
+    danger:  { bg: '#fff5f5', border: '#f5c6cb', icon: '' },
+    warning: { bg: '#fffbf0', border: '#ffc107', icon: '' },
+    success: { bg: '#f0fff4', border: '#c3e6cb', icon: '' },
+    info:    { bg: '#f0f8ff', border: '#bee5eb', icon: '' },
+  }[type] || { bg: '#f8f9fa', border: '#dee2e6', icon: '' });
 
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);

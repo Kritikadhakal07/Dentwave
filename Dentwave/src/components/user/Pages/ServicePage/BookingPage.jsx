@@ -521,7 +521,7 @@ export const PaymentStatus = ({ onGoHome }) => {
       <style>{CSS}</style>
       <div className="bk-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,.08)', padding: '52px 40px', textAlign: 'center', maxWidth: 420, width: '100%', animation: 'fadeUp .35s ease' }}>
-          <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '🎉' : '😕'}</div>
+          <div style={{ fontSize: 56, marginBottom: 20 }}>{isSuccess ? '' : ''}</div>
           <h2 style={{ fontFamily: 'Lora, serif', fontSize: 24, fontWeight: 700, color: '#18181b', marginBottom: 10 }}>
             {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
           </h2>
@@ -535,7 +535,7 @@ export const PaymentStatus = ({ onGoHome }) => {
             className={`bk-btn-pri${isSuccess ? '' : ''}`}
             style={{ width: '100%', background: isSuccess ? '#2563eb' : '#dc2626' }}
           >
-            {isSuccess ? 'View Appointments' : 'Try Again'}
+            {isSuccess ? 'Go Home' : 'Try Again'}
           </button>
         </div>
       </div>
@@ -672,7 +672,7 @@ if (!userId) {
         window.location.href = `http://127.0.0.1:8000/khalti/initiate/${appointmentId}`;
         return;
       }
-      alert('🎉 Appointment confirmed successfully!');
+      alert('Appointment confirmed successfully!');
       onConfirm();
     } catch (err) {
       setError(err.message || 'Failed to create appointment.');
